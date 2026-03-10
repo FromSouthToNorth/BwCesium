@@ -34,130 +34,6 @@ export function getEntityPosition(entity, viewer) {
   }
 }
 
-/**
- * 获取Primitive的位置
- * @param {Object} primitive - Cesium Primitive
- * @returns {Cartesian3|null} Primitive位置
- */
-export function getPrimitivePosition(primitive) {
-  if (!primitive) return null;
-
-  try {
-    // 1. 尝试获取包围球中心
-    if (typeof primitive.getBoundingSphere === 'function') {
-      const boundingSphere = primitive.getBoundingSphere();
-      if (boundingSphere && boundingSphere.center) {
-        return boundingSphere.center;
-      }
-    }
-
-    // 2. 尝试直接获取位置属性
-    if (primitive.position) {
-      if (typeof primitive.position.getValue === 'function') {
-        return primitive.position.getValue();
-      }
-      return primitive.position;
-    }
-
-    // 3. 尝试获取中心点属性
-    if (primitive.center) {
-      if (typeof primitive.center.getValue === 'function') {
-        return primitive.center.getValue();
-      }
-      return primitive.center;
-    }
-
-    // 4. 尝试获取底部中心点（对于圆柱体等）
-    if (primitive.bottomCenter) {
-      if (typeof primitive.bottomCenter.getValue === 'function') {
-        return primitive.bottomCenter.getValue();
-      }
-      return primitive.bottomCenter;
-    }
-
-    // 5. 尝试获取顶点数组的第一个点（对于线和多边形）
-    if (primitive.positions && isArray(primitive.positions) && primitive.positions.length > 0) {
-      const position = primitive.positions[0];
-      if (typeof position.getValue === 'function') {
-        return position.getValue();
-      }
-      return position;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error getting primitive position:', error);
-    return null;
-  }
-}
-
-/**
- * 获取Primitive的顶点位置数组
- * @param {Object} primitive - Cesium Primitive
- * @returns {Cartesian3[]|null} 顶点位置数组
- */
-export function getPrimitivePositions(primitive) {
-  if (!primitive) return null;
-
-  try {
-    // 1. 对于线和多边形，获取positions数组
-    if (primitive.positions && isArray(primitive.positions)) {
-      return primitive.positions.map(pos => {
-        if (typeof pos.getValue === 'function') {
-          return pos.getValue();
-        }
-        return pos;
-      });
-    }
-
-    // 2. 对于其他类型，获取单个位置
-    const position = getPrimitivePosition(primitive);
-    return position ? [position] : null;
-  } catch (error) {
-    console.error('Error getting primitive positions:', error);
-    return null;
-  }
-}
-
-/**
- * 获取Primitive类型
- * @param {Object} primitive - Cesium Primitive
- * @returns {string} Primitive类型标识
- */
-export function getPrimitiveType(primitive) {
-
-  if (!primitive) return 'unknown';
-
-  // 通过构造函数名称判断类型
-  const constructorName = primitive.constructor?.name || '';
-  console.log(primitive);
-
-  // 检查常见的Primitive类型
-  if (constructorName.includes('Model')) {
-    return 'model';
-  } else if (constructorName.includes('PointPrimitive') || constructorName.includes('PointGraphics')) {
-    return 'point';
-  } else if (constructorName.includes('PolylinePrimitive') || constructorName.includes('PolylineGraphics')) {
-    return 'line';
-  } else if (constructorName.includes('PolygonPrimitive') || constructorName.includes('PolygonGraphics')) {
-    return 'polygon';
-  } else if (constructorName.includes('LabelPrimitive') || constructorName.includes('LabelGraphics')) {
-    return 'label';
-  } else if (constructorName.includes('EllipsoidPrimitive') || constructorName.includes('EllipsoidGraphics')) {
-    return 'ellipsoid';
-  } else if (constructorName.includes('BoxPrimitive') || constructorName.includes('BoxGraphics')) {
-    return 'box';
-  } else if (constructorName.includes('CylinderPrimitive') || constructorName.includes('CylinderGraphics')) {
-    return 'cylinder';
-  } else if (primitive.positions && isArray(primitive.positions)) {
-    // 根据positions长度判断是线还是多边形
-    return primitive.positions.length >= 3 ? 'polygon' : 'line';
-  } else if (primitive.position || primitive.center) {
-    return 'point';
-  } else {
-    return 'other';
-  }
-}
 
 /**
  * 获取线实体的顶点位置
@@ -343,9 +219,6 @@ export function getEntitiesInClippingArea(polygon) {
     // 1. 筛选viewer.entities中的实体
     viewer.entities.values.forEach(entity => {
       if (isEntityInPolygon(entity, polygon, viewer)) {
-        if (entity.polygon) {
-          console.log(entity);
-        }
         entities.push({
           entity,
           source: 'viewer',
@@ -388,7 +261,6 @@ export function getEntityStatistics(polygon) {
     bySource: {
       viewer: 0,
       geojson: 0,
-      primitive: 0
     },
     dataSources: new Set()
   };
