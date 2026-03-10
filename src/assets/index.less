@@ -1,0 +1,32 @@
+html, body, #app {
+  height: 100%;
+  width: 100%;
+}
+
+#app .cesium-viewer .cesium-widget-credits {
+  display: none;
+}
+
+.ant-modal-content .ant-modal-body .ant-descriptions .ant-descriptions-item-label {
+  font-size: 12px;
+}
+
+.ant-modal-content .ant-modal-body .ant-descriptions .ant-descriptions-item-content {
+  font-size: 12px;
+}
+
+.ant-modal-wrap {
+  pointer-events: none !important;  /* 事件穿透 */
+}
+
+.ant-modal-content {
+  pointer-events: auto !important;  /* Modal 本身可点击 */
+}
+
+.ant-layout,
+.ant-layout-header,
+.ant-layout-sider,
+.ant-layout-content {
+  height: 100%;
+  overflow: hidden;
+}
