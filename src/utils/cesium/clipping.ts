@@ -1,4 +1,4 @@
-import { unref, toRaw, watch, ref } from 'vue';
+import { unref, toRaw, watch, ref } from 'vue'
 import {
   Cartesian3,
   Cartographic,
@@ -6,51 +6,39 @@ import {
   Cartesian2,
   ImageMaterialProperty,
   ClippingPolygon,
-  Math as CesiumMath
-} from 'cesium';
+  Math as CesiumMath,
+} from 'cesium'
 
-import { notification } from 'ant-design-vue';
+import { notification } from 'ant-design-vue'
 
-import { flyToBoundary } from './index';
-import { isArray } from '../is';
-import { useSetting } from '@/hooks/setting/useSetting';
-import {
-  turfPolygon,
-  densifyPolygon,
-  turfConcave,
-  turfUnion,
-  turfTransformScale,
-} from '../turf';
+import { flyToBoundary } from './index'
+import { isArray } from '../is'
+import { useSetting } from '@/hooks/setting/useSetting'
+import { turfPolygon, densifyPolygon, turfConcave, turfUnion, turfTransformScale } from '../turf'
 
-import {
-  getTraverseBoundary,
-} from '../mqtt/publish';
+import { getTraverseBoundary } from '../mqtt/publish'
 
-import {
-  useGroupCompanyLevelMine,
-} from '@/hooks/useGroupCompanyLevelMine';
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine'
 
 // 使用辅助函数
-import { getViewer, safeCesiumOperation, clearEntityArray } from './helpers';
+import { getViewer, safeCesiumOperation, clearEntityArray } from './helpers'
 
-const {
-  getTraverseBoundaryGeoJSON
-} = useGroupCompanyLevelMine();
+const { getTraverseBoundaryGeoJSON } = useGroupCompanyLevelMine()
 
-const { setPageLoading } = useSetting();
+const { setPageLoading } = useSetting()
 
 // 常量配置
-const TEXTURE_PATH_1 = '/src/assets/soil_texture.png';
-const TEXTURE_PATH_2 = '/src/assets/soil_texture2.png';
-const ENTITY_IDS = ['ClippingWall', 'ClippingWallDM'];
-const clippingEntities: any[] = [];
+const TEXTURE_PATH_1 = '/src/assets/soil_texture.png'
+const TEXTURE_PATH_2 = '/src/assets/soil_texture2.png'
+const ENTITY_IDS = ['ClippingWall', 'ClippingWallDM']
+const clippingEntities: any[] = []
 
 /**
  * 清除裁剪墙体实体
  * @returns {void}
  */
 function clearWall() {
-  clearEntityArray(clippingEntities);
+  clearEntityArray(clippingEntities)
 }
 
 /**
@@ -60,12 +48,12 @@ function clearWall() {
  */
 function clearClipping() {
   safeCesiumOperation((viewer) => {
-    const globe = viewer.scene.globe;
-    const clippingPolygons = globe.clippingPolygons;
-    clippingPolygons.removeAll();
-    clippingPolygons.enabled = false;
-    clearWall();
-  }, '清除裁剪失败');
+    const globe = viewer.scene.globe
+    const clippingPolygons = globe.clippingPolygons
+    clippingPolygons.removeAll()
+    clippingPolygons.enabled = false
+    clearWall()
+  }, '清除裁剪失败')
 }
 
 /**
@@ -77,7 +65,22 @@ export function clearClippingWithElevation() {
   // restoreAllEntitiesElevation();
 
   // 清除裁切
-  clearClipping();
+  clearClipping()
+}
+
+/**
+ * 经纬度环转闭合的 Cartesian3 数组（供 ClippingPolygon 使用）
+ * @param {number[][]} coordinates - [lng, lat] 坐标环
+ * @returns {Array<Cartesian3>} 闭合环的笛卡尔坐标数组
+ */
+function toClosedPositions(coordinates) {
+  const first = coordinates[0]
+  const last = coordinates[coordinates.length - 1]
+  const closed =
+    isArray(first) && isArray(last) && first[0] === last[0] && first[1] === last[1]
+      ? coordinates
+      : coordinates.concat([first])
+  return closed.map((coord) => Cartesian3.fromDegrees(coord[0], coord[1]))
 }
 
 /**
@@ -87,13 +90,13 @@ export function clearClippingWithElevation() {
  */
 function clipping(positions) {
   safeCesiumOperation((viewer) => {
-    const globe = viewer.scene.globe;
-    const clippingPolygons = globe.clippingPolygons;
-    const newClippingPolygon = new ClippingPolygon({ positions });
-    clippingPolygons.add(newClippingPolygon);
-    clippingPolygons.enabled = true;
-    setPageLoading(false);
-  }, '应用裁剪失败');
+    const globe = viewer.scene.globe
+    const clippingPolygons = globe.clippingPolygons
+    const newClippingPolygon = new ClippingPolygon({ positions })
+    clippingPolygons.add(newClippingPolygon)
+    clippingPolygons.enabled = true
+    setPageLoading(false)
+  }, '应用裁剪失败')
 }
 
 /**
@@ -103,7 +106,7 @@ function clipping(positions) {
  * @param {boolean} is - 是否执行裁剪操作
  * @throws {Error} 当矿山参数无效时抛出错误
  * @returns {void}
- * 
+ *
  * @example
  * // 使用示例
  * const mine = {
@@ -113,50 +116,54 @@ function clipping(positions) {
  * mineClipping(mine, true);
  */
 export function mineClipping(mine, is) {
-  clearClippingWithElevation();
+  clearClippingWithElevation()
 
   if (!is) {
-    setPageLoading(false);
-    return;
+    setPageLoading(false)
+    return
   }
 
   // 参数验证
   if (!mine || !mine.boundary || typeof mine.minZ === 'undefined') {
-    throw new Error('Invalid mine parameter: boundary and minZ are required');
+    throw new Error('Invalid mine parameter: boundary and minZ are required')
   }
 
   if (!isArray(mine.boundary) || mine.boundary.length < 3) {
-    throw new Error('Boundary must be an array with at least 3 coordinates');
+    throw new Error('Boundary must be an array with at least 3 coordinates')
   }
 
-  setPageLoading(true);
-  const { boundary, minZ } = mine;
+  setPageLoading(true)
+  const { boundary, minZ } = mine
 
   try {
     // 处理边界
-    const _boundary = turfPolygon({ coordinates: [boundary] });
-    const tfPolygon = densifyPolygon(_boundary, 100);
+    const _boundary = turfPolygon({ coordinates: [boundary] })
+    const tfPolygon = densifyPolygon(_boundary, 100)
 
-    const coordinates = tfPolygon.geometry.coordinates[0];
-    const positions = coordinates.map(coord => Cartesian3.fromDegrees(coord[0], coord[1]));
-    const cartographic = positions.map(pos => Cartographic.fromCartesian(pos));
+    const coordinates = tfPolygon.geometry.coordinates[0]
+    const positions = coordinates.map((coord) => Cartesian3.fromDegrees(coord[0], coord[1]))
+    const cartographic = positions.map((pos) => Cartographic.fromCartesian(pos))
+    // 裁剪多边形用原始边界：加密不改变形状，却让逐像素点内判定的边数成倍增长
+    const clipPositions = toClosedPositions(boundary)
 
     flyToBoundary({ boundary, pad: 0.01 }, () => {
       safeCesiumOperation((viewer) => {
-        sampleTerrainMostDetailed(viewer.terrainProvider, cartographic).then((samples) => {
-          console.log('Terrain samples processed successfully');
-          addWall(positions, cartographic, minZ);
-          clipping(positions);
-        }).catch((error) => {
-          console.error('Error sampling terrain:', error);
-          setPageLoading(false);
-        });
-      }, '地形采样失败');
-    });
+        // 裁剪不依赖地形高度，先应用；加密后的墙体等最精细地形采样完成后再补
+        clipping(clipPositions)
+        sampleTerrainMostDetailed(viewer.terrainProvider, cartographic)
+          .then(() => {
+            console.log('Terrain samples processed successfully')
+            addWall(positions, cartographic, minZ)
+          })
+          .catch((error) => {
+            console.error('Error sampling terrain:', error)
+          })
+      }, '地形采样失败')
+    })
   } catch (error: any) {
-    setPageLoading(false);
-    console.error('Error in mineClipping:', error);
-    throw error;
+    setPageLoading(false)
+    console.error('Error in mineClipping:', error)
+    throw error
   }
 }
 
@@ -175,15 +182,15 @@ function addWall(positions, terrHeights, minZ = 0) {
       id: ENTITY_IDS[0],
       wall: {
         positions: positions,
-        minimumHeights: terrHeights.map(e => e.height),
+        minimumHeights: terrHeights.map((e) => e.height),
         maximumHeights: new Array(positions.length).fill(minZ),
         material: new ImageMaterialProperty({
           image: TEXTURE_PATH_1,
           repeat: new Cartesian2(80, 80),
         }),
-      }
-    });
-    clippingEntities.push(wall1);
+      },
+    })
+    clippingEntities.push(wall1)
 
     // 添加多边形
     const wall2 = viewer.entities.add({
@@ -196,15 +203,14 @@ function addWall(positions, terrHeights, minZ = 0) {
         }),
         height: minZ,
       },
-    });
-    clippingEntities.push(wall2);
+    })
+    clippingEntities.push(wall2)
 
-    console.log('裁切壁纸底纸成功');
-  }, '添加裁剪墙体失败');
+    console.log('裁切壁纸底纸成功')
+  }, '添加裁剪墙体失败')
 }
 
-
-const stopMap = new Map();
+const stopMap = new Map()
 /**
  * 遍历边界裁剪函数
  * 清除现有裁剪，根据传入的mine和is参数进行边界裁剪处理
@@ -213,41 +219,43 @@ const stopMap = new Map();
  * @returns {void}
  */
 export function traverseBoundaryClipping(mine, is) {
-  clearClippingWithElevation();
+  clearClippingWithElevation()
   if (stopMap.has(mine.name)) {
-    stopMap.get(mine.name)();
-    stopMap.delete(mine.name);
+    stopMap.get(mine.name)()
+    stopMap.delete(mine.name)
   }
-  if (!is) return;
-  setPageLoading(true);
-  getTraverseBoundary(mine.name);
-  let index = 0;
-  const stop = watch(() => unref(getTraverseBoundaryGeoJSON), (newVal) => {
-    const { mineBoundary, traverse } = toRaw(unref(newVal)) as any;
-    let cliPolygon, polygon, minZ = -100;
-    if (mineBoundary && traverse) {
-      const _polygon = turfConcave(traverse);
-      minZ = traverse.minZ
-      polygon = turfUnion(mineBoundary, _polygon);
-    }
-    else if (traverse) {
-      minZ = traverse.minZ
-      polygon = turfConcave(traverse);
-    }
-    else if (mineBoundary) {
-      polygon = mineBoundary;
-    }
-    else {
-      notification['error']({
-        description: '井田边界巷道数据都没有, 请检查数据!',
-        } as any);
-      setPageLoading(false);
-      return;
-    }
-    cliPolygon = densifyPolygon(polygon, 50);
-    geojsonClipping(cliPolygon, minZ);
-  });
-  stopMap.set(mine.name, stop);
+  if (!is) return
+  setPageLoading(true)
+  getTraverseBoundary(mine.name)
+  let index = 0
+  const stop = watch(
+    () => unref(getTraverseBoundaryGeoJSON),
+    (newVal) => {
+      const { mineBoundary, traverse } = toRaw(unref(newVal)) as any
+      let cliPolygon,
+        polygon,
+        minZ = -100
+      if (mineBoundary && traverse) {
+        const _polygon = turfConcave(traverse)
+        minZ = traverse.minZ
+        polygon = turfUnion(mineBoundary, _polygon)
+      } else if (traverse) {
+        minZ = traverse.minZ
+        polygon = turfConcave(traverse)
+      } else if (mineBoundary) {
+        polygon = mineBoundary
+      } else {
+        notification['error']({
+          description: '井田边界巷道数据都没有, 请检查数据!',
+        } as any)
+        setPageLoading(false)
+        return
+      }
+      cliPolygon = densifyPolygon(polygon, 50)
+      geojsonClipping(cliPolygon, minZ)
+    },
+  )
+  stopMap.set(mine.name, stop)
 }
 
 /**
@@ -256,7 +264,7 @@ export function traverseBoundaryClipping(mine, is) {
  * @param {Object} geojson - GeoJSON格式的地理数据对象，包含geometry属性
  * @param {number} minZ - 裁剪操作的最小高度值
  * @returns {void}
- * 
+ *
  * @example
  * // 使用示例
  * const geojson = {
@@ -270,28 +278,32 @@ export function traverseBoundaryClipping(mine, is) {
  */
 export function geojsonClipping(geojson, minZ) {
   if (!geojson || !geojson.geometry || !geojson.geometry.coordinates) {
-    console.error('Invalid GeoJSON data');
-    return;
+    console.error('Invalid GeoJSON data')
+    return
   }
 
-  const coordinates = geojson.geometry.coordinates[0];
-  const positions = coordinates.map(coord => Cartesian3.fromDegrees(coord[0], coord[1]));
-  const cartographics = positions.map(pos => Cartographic.fromCartesian(pos));
+  const coordinates = geojson.geometry.coordinates[0]
+  const positions = coordinates.map((coord) => Cartesian3.fromDegrees(coord[0], coord[1]))
+  const cartographics = positions.map((pos) => Cartographic.fromCartesian(pos))
+  // 裁剪多边形用未加密的原始环，避免逐像素判定边数膨胀
+  const clipPositions = toClosedPositions(coordinates)
 
   try {
     flyToBoundary({ boundary: coordinates, pad: 0.01 }, () => {
       safeCesiumOperation((viewer) => {
-        sampleTerrainMostDetailed(viewer.terrainProvider, cartographics).then(heights => {
-          addWall(positions, cartographics, minZ);
-          clipping(positions);
-        }).catch((error) => {
-          console.error('Error sampling terrain in geojsonClipping:', error);
-          setPageLoading(false);
-        });
-      }, 'GeoJSON裁剪失败');
-    });
+        // 裁剪不依赖地形高度，先应用；墙体等采样完成后异步补齐
+        clipping(clipPositions)
+        sampleTerrainMostDetailed(viewer.terrainProvider, cartographics)
+          .then(() => {
+            addWall(positions, cartographics, minZ)
+          })
+          .catch((error) => {
+            console.error('Error sampling terrain in geojsonClipping:', error)
+          })
+      }, 'GeoJSON裁剪失败')
+    })
   } catch (error: any) {
-    console.error('Error in geojsonClipping:', error);
-    setPageLoading(false);
+    console.error('Error in geojsonClipping:', error)
+    setPageLoading(false)
   }
 }
