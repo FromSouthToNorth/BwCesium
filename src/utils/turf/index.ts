@@ -36,7 +36,7 @@ function setId(item, geo) {
  * @returns {Feature<Polygon>} 合并结果
  */
 export function turfUnion(poly1, poly2) {
-  return union(featureCollection([poly1, poly2]));
+  return union(featureCollection([poly1, poly2]))
 }
 
 /**
@@ -54,7 +54,7 @@ export function turfConcave(geojsonPoints) {
  * @returns {Feature<Polygon>} 凸包多边形
  */
 export function turfConvex(geojson) {
-  return convex(geojson);
+  return convex(geojson)
 }
 
 /**
@@ -63,7 +63,7 @@ export function turfConvex(geojson) {
  * @returns {number[]} [lng, lat] 坐标对
  */
 export function turfCentroid(geojson) {
-  return centroid(geojson).geometry.coordinates;
+  return centroid(geojson).geometry.coordinates
 }
 
 /**
@@ -100,7 +100,7 @@ export function densifyPolygon(polygon, pointsPerEdge = 5) {
         out.push([start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t])
       }
     }
-    out.push(src[src.length - 1])  // 完成闭合
+    out.push(src[src.length - 1]) // 完成闭合
     return out
   }
 
@@ -133,6 +133,19 @@ export function turfTransformScale(geojson, factor) {
 }
 
 /**
+ * 闭合多边形环：turf 要求首尾坐标一致，未闭合则追加首坐标
+ * @param {number[][]} ring - 坐标环
+ * @returns {number[][]} 闭合后的坐标环
+ */
+function closeRing(ring) {
+  if (!isArray(ring) || ring.length === 0) return ring
+  const first = ring[0]
+  const last = ring[ring.length - 1]
+  const closed = isArray(first) && isArray(last) && first[0] === last[0] && first[1] === last[1]
+  return closed ? ring : ring.concat([first])
+}
+
+/**
  * 创建 Polygon 或 MultiPolygon Feature
  * @param {Object} item - 源对象或坐标对象，应包含 coordinates 或 geometry.coordinates
  * @returns {Feature<Polygon|MultiPolygon>} 创建的多边形 Feature
@@ -141,13 +154,21 @@ export function turfPolygon(item) {
   const coordinates = item.coordinates || (item.geometry && item.geometry.coordinates)
   const properties = { ...item }
   // 判断坐标结构是否为 MultiPolygon（4層嵌套数组）
-  if (isArray(coordinates) && isArray(coordinates[0]) && isArray(coordinates[0][0]) && isArray(coordinates[0][0][0])) {
-    const poly = multiPolygon(coordinates, properties)
+  if (
+    isArray(coordinates) &&
+    isArray(coordinates[0]) &&
+    isArray(coordinates[0][0]) &&
+    isArray(coordinates[0][0][0])
+  ) {
+    const poly = multiPolygon(
+      coordinates.map((polygon) => polygon.map(closeRing)),
+      properties,
+    )
     setId(item, poly)
     return poly
   }
-  // 否则作为 Polygon（3層嵌套数组）
-  const poly = Polygon(coordinates, properties)
+  // 否则作为 Polygon（3層嵌套数组），外环/内环统一闭合
+  const poly = Polygon(coordinates.map(closeRing), properties)
   setId(item, poly)
   return poly
 }
@@ -167,7 +188,10 @@ export function turfPoint(item) {
     item.boundaryGeo = turfPolygon({ coordinates: item.boundary, ...item })
   }
   // 过滤掉 undefined 的坐标值（只包括有效的坐标）
-  const point = Point([lng, lat, z].filter((v) => v !== undefined), { ...item })
+  const point = Point(
+    [lng, lat, z].filter((v) => v !== undefined),
+    { ...item },
+  )
   setId(item, point)
   return point
 }
@@ -180,7 +204,11 @@ export function turfPoint(item) {
 export function turfFeatureCollection(items) {
   if (isArray(items)) {
     // 如果已是 Feature/FeatureCollection，直接使用；否则尝试转为 Point
-    if (items.length > 0 && items[0].type && (items[0].type === 'Feature' || items[0].type === 'FeatureCollection')) {
+    if (
+      items.length > 0 &&
+      items[0].type &&
+      (items[0].type === 'Feature' || items[0].type === 'FeatureCollection')
+    ) {
       return featureCollection(items)
     }
     return featureCollection(items.map((it) => (it && it.type ? it : turfPoint(it))))
