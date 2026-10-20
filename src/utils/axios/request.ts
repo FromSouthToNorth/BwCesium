@@ -1,13 +1,11 @@
 import { notification } from 'ant-design-vue';
 import axios from 'axios';
 
-import { getToken } from '../auth';
+import { getToken, removeToken } from '../auth';
 
 const caller = 'BwGISOneMap';
-axios.defaults.headers['content-type'] = 'application/json;charset=utf-8';
-axios.defaults.headers['caller'] = caller;
 
-// 创建 axios 实例
+// 创建 axios 实例(请求头只挂实例,不污染全局 axios)
 const service = axios.create({
   // axios 中请求配置有 baseURL 选择，表示请求 URL 公共部分
   baseURL: import.meta.env.VITE_GLOB_API_URL,
@@ -15,39 +13,38 @@ const service = axios.create({
   timeout: 90000,
 });
 
+service.defaults.headers['content-type'] = 'application/json;charset=utf-8';
+service.defaults.headers['caller'] = caller;
+
 const err = (error) => {
-  if (error.response) {
-    const data = error.response.data;
-    console.log(error.response.data.mesg);
-    const token = getToken();
-    console.log('------异常响应------', token);
-    console.log('------异常响应------', error.response.status);
-    switch (error.status) {
-      case 403:
-        notification.error({ message: '系统提示', description: '拒绝访问', duration: 4 });
-        break;
-      case 500:
-        console.log('------error.response------', error.response);
-        const type = error.response.request.responseType;
-        console.log('----type----', type);
-        break;
-      case 404:
-        notification.error({ message: '系统提示', description: '很抱歉，资源未找到!', duration: 4 });
-        break;
-      case 504:
-        notification.error({ message: '系统提示', description: '网络超时' });
-        break;
-      case 401:
-        notification.error({ message: '系统提示', description: '未授权，请重新登录', duration: 4 });
-        break;
-      default:
-        notification.error({
-          message: '系统提示',
-          description: data.message,
-          duration: 4,
-        });
-        break;
-    }
+  // 无 response:网络层错误(断网/超时/DNS)
+  if (!error.response) {
+    notification.error({ message: '系统提示', description: '网络异常,请检查网络连接', duration: 4 });
+    return Promise.reject(error);
+  }
+
+  const { status, data } = error.response;
+  const description = data?.mesg || data?.message || '请求失败';
+
+  switch (status) {
+    case 401:
+      notification.error({ message: '系统提示', description: '登录状态已失效,请重新登录', duration: 4 });
+      // 清除本地登录态后整页刷新,走 SSO 重新登录
+      removeToken();
+      setTimeout(() => window.location.reload(), 1500);
+      break;
+    case 403:
+      notification.error({ message: '系统提示', description: '拒绝访问', duration: 4 });
+      break;
+    case 404:
+      notification.error({ message: '系统提示', description: '很抱歉,资源未找到!', duration: 4 });
+      break;
+    case 504:
+      notification.error({ message: '系统提示', description: '网络超时', duration: 4 });
+      break;
+    default:
+      notification.error({ message: '系统提示', description, duration: 4 });
+      break;
   }
   return Promise.reject(error);
 };
@@ -56,11 +53,8 @@ const err = (error) => {
 service.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
-    config.headers['token'] = token; // 让每个请求携带自定义 token 请根据实际情况自行修改
+    config.headers['token'] = token;
   }
-  // else {
-  //   // config.headers['dingtalk'] = Getdingtalk(caller)
-  // }
   return config;
 }, (error) => {
   return Promise.reject(error);
@@ -73,4 +67,3 @@ service.interceptors.response.use((response) => {
 export {
   service as axios,
 };
-

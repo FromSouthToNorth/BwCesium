@@ -16,7 +16,7 @@ import {
 import { stringEndNumber } from '@/utils/stringEndNumber'
 import { useGroupCompanyLevelMine } from '@/components/GroupAndCompany/src/hooks/useGroupCompanyLevelMine'
 import { offsetMinePoint } from '@/utils/rbush'
-import { notification, Modal, message } from 'ant-design-vue'
+import { notification, Modal, message, Button } from 'ant-design-vue'
 import { h } from 'vue'
 
 import { useSetting } from "@/hooks/setting/useSetting"
@@ -207,13 +207,13 @@ function handlePromptMessage(result) {
   notification[messageType]({
     description: mesg,
     duration: null, // 不自动关闭
-    btn: () => h('a-button', {
+    btn: () => h(Button, {
       type: 'primary',
       size: 'small',
       onClick: () => {
         handleMessageLink(url, messageType)
       },
-    }, '查看链接'),
+    }, () => '查看链接'),
   })
 }
 

@@ -217,22 +217,6 @@ export function getSafeClientId() {
   return mqtt.clientId || ''
 }
 
-/**
- * 发布消息的快捷函数
- * @param {Object} message - 消息对象
- * @param {Function} [callback] - 回调函数
- * @returns {boolean} 是否成功发布
- */
-export function publishMessage(message, callback) {
-  try {
-    mqtt.publish(message, callback)
-    return true
-  } catch (error: any) {
-    console.error('[MQTT] 消息发布失败', error)
-    return false
-  }
-}
-
 // ==================== MQTT 状态监测函数 ====================
 
 /**

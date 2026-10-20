@@ -1,5 +1,5 @@
 <template>
-  <BaseDraggableModal :title="props.mine?.name || '操作'" v-model:open="props.showModal" :mask="props.mask" width="220px"
+  <BaseDraggableModal :title="props.mine?.name || '操作'" :open="props.showModal" :mask="props.mask" width="220px"
     @afterClose="afterClose" @ok="handleOk">
     <Operate :mine="props.mine" :initialCheckedKeys="props.initialCheckedKeys"
       @checkedKeysChange="handleCheckedKeysChange" />

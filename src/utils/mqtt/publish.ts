@@ -7,8 +7,6 @@ const { setPageLoading } = useSetting()
 
 // 全局参数映射表
 const globalParamMap = new Map()
-const mineName = getMineName()
-globalParamMap.set('MineName', mineName)
 
 /**
  * MQTT 消息发布管理器
@@ -46,8 +44,9 @@ function buildMessageObject(code, strategyParams) {
  * @private
  */
 function mergeStrategyParams(strategyParams = []) {
-  // 创建本地参数映射，包含全局参数
+  // 创建本地参数映射,包含全局参数(MineName 每次发布时读取,避免模块加载早于 SSO 写入的时序问题)
   const localParamMap = new Map([...globalParamMap])
+  localParamMap.set('MineName', getMineName())
 
   // 添加传入的策略参数（传入参数会覆盖全局参数）
   if (isArray(strategyParams)) {

@@ -91,13 +91,6 @@ class Mqtt {
   _isConnected = false
 
   /**
-   * 自动心跳计时器 ID
-   * @type {number|null}
-   * @private
-   */
-  _keepAliveTimer: any = null
-
-  /**
    * 创建 MQTT 客户端实例
    * @param {boolean} isDebug - 是否启用调试模式
    * @param {string} [caller] - 调用者标识，默认为环境变量 VITE_PRODUCT_CODE
@@ -156,9 +149,6 @@ class Mqtt {
 
       // 连接成功后执行自动订阅
       this._executeAutoSubscribe()
-
-      // 启动自动心跳（每 30 秒发送一次）
-      this.startKeepAlive(30000)
     })
 
     // 重新连接事件
@@ -171,7 +161,6 @@ class Mqtt {
     client.on('close', () => {
       this.connectionTime = null
       this._isConnected = false
-      this.stopKeepAlive()
       this.logMessage('MQTT 连接断开（close 事件）')
     })
 
@@ -179,7 +168,6 @@ class Mqtt {
     client.on('offline', () => {
       this.connectionTime = null
       this._isConnected = false
-      this.stopKeepAlive()
       this.logMessage('MQTT 离线（offline 事件）')
       // 提示用户连接已断开
       if (this.isDebug) {
@@ -457,78 +445,6 @@ class Mqtt {
   getConnectionDuration() {
     if (!this.connectionTime) return 0
     return Math.floor((Date.now() - (this.connectionTime?.getTime?.() ?? Date.now())) / 1000)
-  }
-
-  /**
-   * 保持连接活跃（发送 ping）
-   * 用于防止长时间空闲导致的连接断开
-   * @returns {void}
-   */
-  keepAlive() {
-    if (!this.isConnected()) {
-      this.logMessage('无法发送心跳：MQTT 未连接')
-      return
-    }
-
-    // mqtt.js 没有对外暴露 `ping` 方法，使用内部发送 pingreq 的方式并做保护判断
-    try {
-      if (typeof this.client.ping === 'function') {
-        this.client.ping((err) => {
-          if (err) {
-            this.logMessage('心跳发送失败', { error: err.message })
-          } else {
-            this.logMessage('心跳发送成功')
-          }
-        })
-        return
-      }
-
-      if (typeof this.client._sendPacket === 'function') {
-        // 直接发送 pingreq 包（内部 API），不带回调
-        this.client._sendPacket({ cmd: 'pingreq' })
-        this.logMessage('心跳(pingreq) 已发送 via _sendPacket')
-        return
-      }
-
-      // 兜底：如果内部接口不可用，记录日志但不抛错
-      this.logMessage('心跳不可用：client 不支持 ping 或 _sendPacket')
-    } catch (err: any) {
-      this.logMessage('心跳发送异常', { error: err && err.message })
-    }
-  }
-
-  /**
-   * 启动自动心跳
-   * 每隔指定时间发送一次心跳，防止连接断开
-   * @param {number} [interval=30000] - 心跳间隔（毫秒）
-   * @returns {number} 心跳计时器 ID
-   */
-  startKeepAlive(interval = 30000) {
-    if (this._keepAliveTimer) {
-      clearInterval(this._keepAliveTimer)
-    }
-
-    this.logMessage('启动自动心跳', { interval: `${interval}ms` })
-
-    this._keepAliveTimer = setInterval(() => {
-      if (this.isConnected()) {
-        this.keepAlive()
-      }
-    }, interval)
-
-    return this._keepAliveTimer
-  }
-
-  /**
-   * 停止自动心跳
-   * @returns {void}
-   */
-  stopKeepAlive() {
-    if (this._keepAliveTimer) {
-      clearInterval(this._keepAliveTimer)
-      this._keepAliveTimer = null
-      this.logMessage('停止自动心跳')
-    }
   }
 
   /**
