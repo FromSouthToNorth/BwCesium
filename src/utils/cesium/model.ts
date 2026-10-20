@@ -1,4 +1,4 @@
-import { toRaw, unref } from 'vue'
+import { toRaw, unref, watch } from 'vue'
 import {
   Transforms,
   Cartesian3,
@@ -22,6 +22,13 @@ import { getViewer, safeCesiumOperation } from './helpers'
 import { MODEL_CONFIG } from './constants'
 import { convertObjToGltfBlobUrl } from './objToGltf'
 import { getConvertedModelUrl } from './tunnelModelCache'
+import {
+  fitTunnelCalibration,
+  loadCachedCalibration,
+  saveCachedCalibration,
+} from './tunnelCalibration'
+import { getTunnelLineString } from '../mqtt/publish'
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine'
 
 // 模型管理
 const modelMap = new Map()
@@ -256,6 +263,123 @@ function getHeadingPitchRollFromModelMatrix(model) {
 }
 
 /**
+ * 构建巷道模型的放置矩阵（含配准校正）
+ * 校正绕模型原点（矿井锚点）生效：先抬升 yOffset，再绕局部天轴旋转 heading
+ * @param {Object} anchor - 锚点 { L, B, z }
+ * @param {Object} calibration - 校正参数 { heading?, yOffset? }
+ * @returns {Matrix4} 模型矩阵
+ */
+function buildTunnelModelMatrix(anchor, calibration: { heading?: number; yOffset?: number } = {}) {
+  const { L, B, z } = anchor
+  const position = Cartesian3.fromDegrees(L, B, z + (calibration.yOffset ?? 0))
+  const modelMatrix = Transforms.eastNorthUpToFixedFrame(position)
+  if (!calibration.heading) return modelMatrix
+  return Matrix4.multiply(
+    modelMatrix,
+    Matrix4.fromRotationTranslation(
+      Matrix3.fromRotationZ(CesiumMath.toRadians(calibration.heading)),
+    ),
+    modelMatrix,
+  )
+}
+
+// 当前巷道模型及其锚点，供控制台实时标定使用
+let caliberatingModel: any = null
+let caliberatingAnchor: any = null
+
+/**
+ * 实时调整巷道模型配准（仅开发环境暴露到 window，用于现场标定）
+ * @param {number} heading - 绕竖轴旋转角（度，正值=逆时针）
+ * @param {number} yOffset - 垂直偏移（米，正值=抬高）
+ * @returns {void}
+ */
+function applyTunnelCalibration(heading = 0, yOffset = 0) {
+  if (!caliberatingModel || !caliberatingAnchor) {
+    console.warn('巷道模型尚未加载，无法标定')
+    return
+  }
+  caliberatingModel.modelMatrix = buildTunnelModelMatrix(caliberatingAnchor, { heading, yOffset })
+  saveCachedCalibration(caliberatingAnchor.MineDesc, { heading, yOffset })
+  console.log(
+    `已应用并缓存标定 heading=${heading}° yOffset=${yOffset}m（清除 localStorage 中的 bwcesium:tunnel-calib 可恢复自动拟合）`,
+  )
+}
+
+if (import.meta.env.DEV) {
+  ;(window as any).__tunnelCalibrate = applyTunnelCalibration
+}
+
+/**
+ * 用当前矿的巷道线自动拟合模型配准参数并应用
+ * 每个矿只需首次加载时拟合一次，结果按 MineDesc 缓存，后续加载直接复用
+ * @param {Object} mine - 矿井对象
+ * @param {Object|null} footprint - 模型水平足迹
+ * @param {Object} model - Cesium 模型实例
+ * @returns {Promise<void>}
+ */
+async function autoCalibrateTunnelModel(mine, footprint, model): Promise<void> {
+  if (!footprint) return
+  try {
+    const { getTunnelGeoJSON } = useGroupCompanyLevelMine()
+    // getTunnelGeoJSON 是跨矿共享的模块级状态，切换矿井后可能仍是上一个矿的数据。
+    // 只有当前矿的巷道图层确实在显示时才能直接复用，否则必须拉新数据并等待“下一次更新”。
+    const lineLayerOn = !!getViewer()?.dataSources?.getByName?.('tunnel_LineString')?.length
+    const before = unref(getTunnelGeoJSON)
+    let geojson = lineLayerOn ? before : null
+    let source = '复用当前巷道图层数据'
+
+    if (!geojson) {
+      // 巷道图层未开启时，复用同一 MQTT 数据通道拉取一次（仅用于配准，不渲染）
+      source = '拉取巷道线数据'
+      getTunnelLineString(mine.name)
+      geojson = await new Promise<any>((resolve) => {
+        const stop = watch(
+          getTunnelGeoJSON,
+          (val) => {
+            // 必须等到新数据，避免误用上一个矿遗留的线
+            if (!val || val === before) return
+            stop()
+            clearTimeout(timer)
+            resolve(val)
+          },
+          { flush: 'sync' },
+        )
+        const timer = setTimeout(() => {
+          stop()
+          resolve(null)
+        }, 15000)
+      })
+    }
+    if (!geojson) {
+      console.warn(`巷道模型自动配准跳过（${mine.MineDesc}）：未获取到本矿巷道线数据`)
+      return
+    }
+
+    const result = fitTunnelCalibration(geojson, footprint, mine)
+    if (!result) {
+      console.warn(`巷道模型自动配准跳过（${mine.MineDesc}）：巷道线数据不足`)
+      return
+    }
+    console.log(
+      `---巷道模型自动配准(${mine.MineDesc}, ${source}): heading=${result.heading}° yOffset=${result.yOffset}m ` +
+        `命中率 ${(result.hitRate * 100).toFixed(1)}%（提升 ${(result.confidence * 100).toFixed(1)}%）---`,
+    )
+    // 与未校正基本一致时不改动，避免噪声导致抖动
+    if (!result.heading && !result.yOffset) return
+
+    model.modelMatrix = buildTunnelModelMatrix(mine, result)
+    caliberatingModel = model
+    caliberatingAnchor = mine
+    saveCachedCalibration(mine.MineDesc, {
+      heading: result.heading,
+      yOffset: result.yOffset,
+    })
+  } catch (error) {
+    console.warn('巷道模型自动配准失败:', error)
+  }
+}
+
+/**
  * 加载矿井巷道模型
  * @param {Object} mine - 矿井信息对象，包含边界、描述、坐标等参数
  * @param {boolean} is - 是否执行加载操作的标志位
@@ -283,8 +407,12 @@ export function loadMineTunnelModel(mine, is) {
   }
 
   try {
-    const position = Cartesian3.fromDegrees(L, B, z)
-    const modelMatrix = Transforms.eastNorthUpToFixedFrame(position)
+    // 优先使用该矿已缓存的自动配准结果，其次用配置里的手工校正
+    const cachedCalibration = loadCachedCalibration(MineDesc)
+    const modelMatrix = buildTunnelModelMatrix(
+      mine,
+      cachedCalibration ?? MODEL_CONFIG.TUNNEL_MODEL_CALIBRATION[MineDesc] ?? {},
+    )
 
     // 巷道模型为服务端 OBJ+MTL，先转换成 glTF 再交给 Cesium 加载
     const modelUrl = MODEL_CONFIG.TUNNEL_MODEL_URL.replace(
@@ -297,7 +425,7 @@ export function loadMineTunnelModel(mine, is) {
     )
 
     const loadTunnel = async () => {
-      const blobUrl = await getConvertedModelUrl(modelUrl, mtlUrl, () =>
+      const { url: blobUrl, footprint } = await getConvertedModelUrl(modelUrl, mtlUrl, () =>
         convertObjToGltfBlobUrl(modelUrl, mtlUrl, MODEL_CONFIG.TUNNEL_TEXTURE_MAX_SIZE),
       )
       try {
@@ -312,9 +440,20 @@ export function loadMineTunnelModel(mine, is) {
         addModel('hdModel', model)
         model.readyEvent.addEventListener(() => {
           ;(model as any).mine = mine
+          caliberatingModel = model
+          caliberatingAnchor = mine
           console.log('---巷道模型加载成功---')
+          if (import.meta.env.DEV) {
+            console.log(
+              '如模型与巷道数据存在配准偏差，可用 __tunnelCalibrate(heading度, yOffset米) 实时标定，正值 heading=逆时针、yOffset=抬高',
+            )
+          }
           setModel('hdModel')
           URL.revokeObjectURL(blobUrl)
+          // 无缓存配准且足迹可用时，用当前矿自己的巷道线自动拟合校正量
+          if (!cachedCalibration) {
+            autoCalibrateTunnelModel(mine, footprint, model)
+          }
         })
       } catch (error) {
         URL.revokeObjectURL(blobUrl)

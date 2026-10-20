@@ -58,6 +58,13 @@ export const MODEL_CONFIG = {
   TUNNEL_MODEL_MTL_URL: '/bwmodel/Content/Resource/ObjModel/{MineDesc}/XD.mtl',
   // 转换导出时贴图的最大边长，控制转换耗时与产物体积
   TUNNEL_TEXTURE_MAX_SIZE: 2048,
+  /**
+   * 巷道模型配准校正（按矿井 MineDesc 配置，绕模型原点=矿井锚点生效）
+   * heading: 水平旋转角（度，正值=逆时针）；yOffset: 垂直偏移（米，正值=抬高）
+   * 偏差特征：原点处吻合、离原点越远偏差越大——多为高程基准差在透视下的径向表现，优先调 yOffset
+   * 现场标定：浏览器控制台调用 __tunnelCalibrate(heading, yOffset) 实时生效并打印结果
+   */
+  TUNNEL_MODEL_CALIBRATION: {} as Record<string, { heading?: number; yOffset?: number }>,
 }
 
 // 裁切配置

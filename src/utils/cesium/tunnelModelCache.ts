@@ -5,11 +5,19 @@
  * 再次勾选或刷新页面后直接复用。生产环境为 http 源，Cache API 不可用，故用 IndexedDB。
  * 缓存层任何异常都不阻断模型加载，仅退化为每次现算。
  */
+import type { TunnelFootprint } from './objToGltf'
+
+export interface ConvertedModel {
+  /** glb blob URL，使用完毕后需 URL.revokeObjectURL 释放 */
+  url: string
+  /** 模型水平足迹，用于运行时自动配准（旧缓存可能为空） */
+  footprint: TunnelFootprint | null
+}
 
 const DB_NAME = 'bwcesium-model-cache'
 const STORE_NAME = 'glb'
 // 转换产物结构变化时递增，使旧缓存自然失效
-const CACHE_VERSION = 'v2'
+const CACHE_VERSION = 'v3'
 // HEAD 不可用或服务端不返回校验头时，退化为按时间失效
 const CACHE_TTL = 24 * 60 * 60 * 1000
 // 校验服务端文件是否有变化的 HEAD 请求超时
@@ -20,6 +28,7 @@ interface CacheRecord {
   contentLength: string | null
   savedAt: number
   glb: Blob
+  footprint: TunnelFootprint | null
 }
 
 interface ServerSignature {
@@ -28,7 +37,7 @@ interface ServerSignature {
 }
 
 // 同一模型的并发请求共享同一份转换任务
-const inflight = new Map<string, Promise<string>>()
+const inflight = new Map<string, Promise<ConvertedModel>>()
 
 function reqAsPromise<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -73,7 +82,7 @@ async function fetchSignature(url: string): Promise<ServerSignature | null> {
   }
 }
 
-async function readCache(objUrl: string, key: string): Promise<string | null> {
+async function readCache(objUrl: string, key: string): Promise<ConvertedModel | null> {
   const record = await withStore(
     'readonly',
     (store) => store.get(key) as IDBRequest<CacheRecord | undefined>,
@@ -90,16 +99,22 @@ async function readCache(objUrl: string, key: string): Promise<string | null> {
     // HEAD 不可用或不带校验头：按时间失效
     return null
   }
-  return URL.createObjectURL(record.glb)
+  return { url: URL.createObjectURL(record.glb), footprint: record.footprint ?? null }
 }
 
-async function writeCache(key: string, objUrl: string, glb: Blob): Promise<void> {
+async function writeCache(
+  key: string,
+  objUrl: string,
+  glb: Blob,
+  footprint: TunnelFootprint | null,
+): Promise<void> {
   const signature = await fetchSignature(objUrl)
   const record: CacheRecord = {
     etag: signature?.etag ?? null,
     contentLength: signature?.contentLength ?? null,
     savedAt: Date.now(),
     glb,
+    footprint,
   }
   await withStore('readwrite', (store) => store.put(record, key))
 }
@@ -108,14 +123,14 @@ async function writeCache(key: string, objUrl: string, glb: Blob): Promise<void>
  * 获取巷道模型的 glb blob URL：命中缓存直接返回，否则现算并写入缓存
  * @param {string} objUrl - OBJ 模型地址（缓存 key 的一部分）
  * @param {string} mtlUrl - MTL 材质地址（缓存 key 的一部分）
- * @param {() => Promise<string>} convert - 缓存未命中时执行的转换函数，返回 glb blob URL
- * @returns {Promise<string>} glb blob URL，使用完毕后需 URL.revokeObjectURL 释放
+ * @param {() => Promise<ConvertedModel>} convert - 缓存未命中时执行的转换函数
+ * @returns {Promise<ConvertedModel>} glb blob URL 与模型足迹
  */
 export function getConvertedModelUrl(
   objUrl: string,
   mtlUrl: string,
-  convert: () => Promise<string>,
-): Promise<string> {
+  convert: () => Promise<ConvertedModel>,
+): Promise<ConvertedModel> {
   const key = `${CACHE_VERSION}|${objUrl}|${mtlUrl}`
   const pending = inflight.get(key)
   if (pending) return pending
@@ -131,14 +146,14 @@ export function getConvertedModelUrl(
       console.warn('读取巷道模型缓存失败，转为直接加载:', error)
     }
 
-    const blobUrl = await convert()
+    const converted = await convert()
     try {
-      const res = await fetch(blobUrl)
-      await writeCache(key, objUrl, await res.blob())
+      const res = await fetch(converted.url)
+      await writeCache(key, objUrl, await res.blob(), converted.footprint)
     } catch (error) {
       console.warn('写入巷道模型缓存失败:', error)
     }
-    return blobUrl
+    return converted
   })().finally(() => inflight.delete(key))
 
   inflight.set(key, task)

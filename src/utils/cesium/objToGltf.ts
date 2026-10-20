@@ -59,17 +59,104 @@ function createCachedTextureLoader(THREE_NS: typeof THREE, cache: Map<string, TH
 }
 
 /**
+ * 模型水平足迹栅格：用于运行时与巷道线数据做自动配准
+ * 每格记录该处模型几何的高程范围（分米，相对 yBase），未占用格 occ 为 0
+ */
+export interface TunnelFootprint {
+  cellSize: number
+  minX: number
+  minZ: number
+  cols: number
+  rows: number
+  occ: Uint8Array
+  yBase: number
+  yMin: Int16Array
+  yMax: Int16Array
+}
+
+/** 足迹栅格边长（米）：越小越精确、内存越大 */
+const FOOTPRINT_CELL = 8
+/** 足迹栅格总格数上限，超出则放大格边长 */
+const FOOTPRINT_MAX_CELLS = 600_000
+
+/**
+ * 从模型几何构建水平足迹栅格（模型局部坐标：x=东向轴、z=南北向轴、y=高程）
+ * @param {THREE.Group} group - 合并后的模型网格组
+ * @returns {TunnelFootprint|null} 足迹栅格，无几何时返回 null
+ */
+function buildFootprint(group: THREE.Group): TunnelFootprint | null {
+  const meshes: THREE.Mesh[] = []
+  group.traverse((obj) => {
+    if ((obj as THREE.Mesh).isMesh) meshes.push(obj as THREE.Mesh)
+  })
+  if (!meshes.length) return null
+
+  let minX = Infinity
+  let maxX = -Infinity
+  let minZ = Infinity
+  let maxZ = -Infinity
+  let minY = Infinity
+  let count = 0
+  meshes.forEach((mesh) => {
+    const arr = mesh.geometry.attributes.position?.array as ArrayLike<number> | undefined
+    if (!arr) return
+    for (let i = 0; i < arr.length; i += 3) {
+      const x = arr[i]
+      const y = arr[i + 1]
+      const z = arr[i + 2]
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (z < minZ) minZ = z
+      if (z > maxZ) maxZ = z
+      if (y < minY) minY = y
+      count++
+    }
+  })
+  if (!count || !Number.isFinite(minX) || !Number.isFinite(minY)) return null
+
+  // 模型过大时放大格边长，控制内存与缓存体积
+  let cellSize = FOOTPRINT_CELL
+  while (((maxX - minX) / cellSize + 1) * ((maxZ - minZ) / cellSize + 1) > FOOTPRINT_MAX_CELLS) {
+    cellSize *= 2
+  }
+  const cols = Math.max(1, Math.ceil((maxX - minX) / cellSize) + 1)
+  const rows = Math.max(1, Math.ceil((maxZ - minZ) / cellSize) + 1)
+
+  const occ = new Uint8Array(cols * rows)
+  const yMin = new Int16Array(cols * rows).fill(32767)
+  const yMax = new Int16Array(cols * rows).fill(-32768)
+  const yBase = Math.floor(minY)
+
+  meshes.forEach((mesh) => {
+    const arr = mesh.geometry.attributes.position?.array as ArrayLike<number> | undefined
+    if (!arr) return
+    for (let i = 0; i < arr.length; i += 3) {
+      const ix = Math.floor((arr[i] - minX) / cellSize)
+      const iz = Math.floor((arr[i + 2] - minZ) / cellSize)
+      if (ix < 0 || ix >= cols || iz < 0 || iz >= rows) continue
+      const idx = iz * cols + ix
+      const dm = Math.round((arr[i + 1] - yBase) * 10)
+      occ[idx] = 1
+      if (dm < yMin[idx]) yMin[idx] = dm
+      if (dm > yMax[idx]) yMax[idx] = dm
+    }
+  })
+
+  return { cellSize, minX, minZ, cols, rows, occ, yBase, yMin, yMax }
+}
+
+/**
  * 将 OBJ+MTL 转换为二进制 glTF 的 blob URL
  * @param {string} objUrl - OBJ 模型地址
  * @param {string} mtlUrl - MTL 材质地址（引用的纹理按 OBJ 所在目录解析）
  * @param {number} maxTextureSize - 导出贴图的最大边长，超过会等比缩小（canvas 重编码耗时随像素数增长）
- * @returns {Promise<string>} glb blob URL，使用完毕后需 URL.revokeObjectURL 释放
+ * @returns {Promise<{ url: string; footprint: TunnelFootprint | null }>} glb blob URL（使用完毕需释放）与水平足迹
  */
 export async function convertObjToGltfBlobUrl(
   objUrl: string,
   mtlUrl: string,
   maxTextureSize = 2048,
-): Promise<string> {
+): Promise<{ url: string; footprint: TunnelFootprint | null }> {
   const [THREE, { MTLLoader }, { OBJLoader }, { GLTFExporter }, { mergeGeometries }] =
     await Promise.all([
       import('three'),
@@ -125,7 +212,14 @@ export async function convertObjToGltfBlobUrl(
   console.time('---巷道模型 OBJ 转 glTF 耗时---')
   const glb = await exporter.parseAsync(mergedGroup, { binary: true, maxTextureSize })
   console.timeEnd('---巷道模型 OBJ 转 glTF 耗时---')
-  return URL.createObjectURL(new Blob([glb as ArrayBuffer], { type: 'model/gltf-binary' }))
+  const footprint = buildFootprint(mergedGroup)
+  console.log(
+    `---巷道模型足迹: ${footprint ? `${footprint.cols}×${footprint.rows} 格(${footprint.cellSize}m)` : '无'}---`,
+  )
+  return {
+    url: URL.createObjectURL(new Blob([glb as ArrayBuffer], { type: 'model/gltf-binary' })),
+    footprint,
+  }
 }
 
 /**
