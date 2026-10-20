@@ -70,6 +70,7 @@ import { isAlphabetic } from '@/utils/is'
 
 import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine'
 import { flyToBoundary, flyTo } from '@/utils/cesium'
+import { FLY_TO_CONFIG } from '@/utils/cesium/constants'
 import { useSetting } from '@/hooks/setting/useSetting'
 import { utilMenu } from '@/utils/menu'
 import { getActiveEntity, initializeCesium, geoJSONPointLoad, destroyCesium } from '@/utils/cesium'
@@ -99,6 +100,8 @@ const contentmenu = ref<Record<string, any>>({})
 const geojsonPoints = ref<FeatureCollection>()
 const showModal = ref(false)
 const showOpModal = ref(false)
+// 首次定位是否已完成（首次直接跳转，之后的操作才用飞行动画）
+let initialViewApplied = false
 const cesiumContainer = ref<HTMLElement | null>(null)
 const searchValue = ref('')
 const totalHtml = ref('')
@@ -232,12 +235,23 @@ watch(
     const bbox = turfBbox(fc)
     const destination = Rectangle.fromDegrees(bbox[0] - 6, bbox[1] - 6, bbox[2] + 6, bbox[3] + 6)
     Camera.DEFAULT_VIEW_RECTANGLE = destination
-    console.log('destination: ', destination)
-    flyTo(destination, () => {
+    const finish = () => {
       geoJSONPointLoad(fc, 'MinePoint', { isSetupClustering: true })
       selDisabled.value = false
       setPageLoading(false)
-    })
+    }
+    // 首次定位用较短的过渡动画，避免启动时地球转太久
+    const viewer = getViewer()
+    if (!initialViewApplied && viewer) {
+      initialViewApplied = true
+      viewer.camera.flyTo({
+        destination,
+        duration: FLY_TO_CONFIG.INITIAL_DURATION,
+        complete: finish,
+      })
+      return
+    }
+    flyTo(destination, finish)
   },
 )
 

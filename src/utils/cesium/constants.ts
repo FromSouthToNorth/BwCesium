@@ -36,6 +36,8 @@ export const CLUSTER_CONFIG = {
 // 飞行动画配置
 export const FLY_TO_CONFIG = {
   DEFAULT_DURATION: 3, // 秒
+  // 启动后首次定位的过渡时长：短一点，既不像硬切也不会转太久
+  INITIAL_DURATION: 1, // 秒
   DEFAULT_PAD: 0.01, // 边界填充
   DEFAULT_HEIGHT: 6000, // 默认高度（米）
 }

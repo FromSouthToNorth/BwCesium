@@ -1,4 +1,4 @@
-import { unref, toRaw, ref, computed } from 'vue';
+import { unref, toRaw, ref, computed } from 'vue'
 import {
   defined,
   Math as CesiumMath,
@@ -16,52 +16,53 @@ import {
   WebMercatorTilingScheme,
   ClippingPolygonCollection,
   Terrain,
-} from 'cesium';
+  Camera,
+} from 'cesium'
 
-import CesiumNavigation from 'cesium-navigation-es6';
+import CesiumNavigation from 'cesium-navigation-es6'
 
-import { groupCompanyLevelMine } from '@/utils/mqtt/publish';
-import { useCesiumStore } from '@/store/modules/cesiumStore';
-import { turfPolygon, turfBbox } from '../turf';
-import { isArray } from '../is';
+import { groupCompanyLevelMine } from '@/utils/mqtt/publish'
+import { useCesiumStore } from '@/store/modules/cesiumStore'
+import { turfPolygon, turfBbox } from '../turf'
+import { isArray } from '../is'
 
 // 导入辅助函数和常量
-import { safeCesiumOperation } from './helpers';
-import { MAP_CONFIG, FLY_TO_CONFIG, GEOMETRY_CONFIG } from './constants';
-import { computeGeometricCenter, cartesianToDegrees, bboxToRectangle } from './utils';
-import { leftClick, rightClick, queryEntitiesInView } from './on';
+import { safeCesiumOperation } from './helpers'
+import { MAP_CONFIG, FLY_TO_CONFIG, GEOMETRY_CONFIG } from './constants'
+import { computeGeometricCenter, cartesianToDegrees, bboxToRectangle } from './utils'
+import { leftClick, rightClick, queryEntitiesInView } from './on'
 
 // 导出其他模块的函数
-export { createIconMarker, buildLabel } from './icon';
-export { translateModel, loadMineTunnelModel } from './model';
-export { getActiveEntity } from './on';
-export { setupClustering } from './clustering';
-export { geoJSONPointLoad, loadMineDevicePoint, loadMineTunnel } from './geojson';
-export { traverseBoundaryClipping } from './clipping';
-export { loadMineGroundHole } from './cylinder';
-export { loaMineWaterArea } from './waterArea';
+export { createIconMarker, buildLabel } from './icon'
+export { translateModel, loadMineTunnelModel } from './model'
+export { getActiveEntity } from './on'
+export { setupClustering } from './clustering'
+export { geoJSONPointLoad, loadMineDevicePoint, loadMineTunnel } from './geojson'
+export { traverseBoundaryClipping } from './clipping'
+export { loadMineGroundHole } from './cylinder'
+export { loaMineWaterArea } from './waterArea'
 export { getViewer } from './helpers'
 
 // 导出高程控制模块
-export * from './elevation';
+export * from './elevation'
 
 // 使用常量配置
-Ion.defaultAccessToken = MAP_CONFIG.ION_TOKEN;
-const mapTileKey = MAP_CONFIG.MAP_TILE_KEY;
+Ion.defaultAccessToken = MAP_CONFIG.ION_TOKEN
+const mapTileKey = MAP_CONFIG.MAP_TILE_KEY
 
 // Vue 响应式引用
-const terrainRef = ref<any>(null);
+const terrainRef = ref<any>(null)
 
 /**
  * 地形加载完成回调
  */
 function handleTerrainReady() {
-  const terrain = toRaw(unref(terrainRef));
+  const terrain = toRaw(unref(terrainRef))
   if (terrain && terrain.readyEvent) {
     terrain.readyEvent.addEventListener((terr) => {
-      console.log('-----地形加载完成----- ', terr);
-      groupCompanyLevelMine();
-    });
+      console.log('-----地形加载完成----- ', terr)
+      groupCompanyLevelMine()
+    })
   }
 }
 
@@ -73,48 +74,54 @@ function handleTerrainReady() {
  * const viewer = initializeCesium(document.getElementById('cesiumContainer'));
  */
 export function initializeCesium(refEl) {
+  // 初始视角直接定位到中国范围，避免先出现默认全球视角再飞行动画
+  const initialView = Rectangle.fromDegrees(73.0, 3.0, 136.0, 54.0)
+  Camera.DEFAULT_VIEW_RECTANGLE = initialView
+
   // 创建 Viewer 实例
   const viewer = new Viewer(refEl, {
     timeline: false,
     animation: false,
     shouldAnimate: true,
     baseLayerPicker: true,
-  });
+  })
+  // 构造后立即切换视角（setView 无过渡动画），避免先渲染默认全球视角
+  viewer.camera.setView({ destination: initialView })
 
   // 配置地图瓦片
   const tileProvider = new UrlTemplateImageryProvider({
     url: `/BwMap/tiles/{z}/{x}/{y}.png?access_token=${mapTileKey}`,
     tilingScheme: new WebMercatorTilingScheme(),
     maximumLevel: 16,
-  });
+  })
 
   // 配置场景
-  const scene = viewer.scene;
-  terrainRef.value = Terrain.fromWorldTerrain();
-  const terrain = toRaw(unref(terrainRef));
-  scene.setTerrain(terrain);
+  const scene = viewer.scene
+  terrainRef.value = Terrain.fromWorldTerrain()
+  const terrain = toRaw(unref(terrainRef))
+  scene.setTerrain(terrain)
 
   // 配置地球
-  const globe = scene.globe;
-  globe.translucency.enabled = true;
-  globe.depthTestAgainstTerrain = true;
-  globe.clippingPolygons = new ClippingPolygonCollection();
+  const globe = scene.globe
+  globe.translucency.enabled = true
+  globe.depthTestAgainstTerrain = true
+  globe.clippingPolygons = new ClippingPolygonCollection()
 
   // 添加图层和导航
-  viewer.imageryLayers.add(new ImageryLayer(tileProvider));
-  new (CesiumNavigation as any)(viewer);
+  viewer.imageryLayers.add(new ImageryLayer(tileProvider))
+  new (CesiumNavigation as any)(viewer)
 
   // 存储到 store
-  const cesiumStore = useCesiumStore();
-  cesiumStore.setViewer(viewer);
+  const cesiumStore = useCesiumStore()
+  cesiumStore.setViewer(viewer)
 
   // 初始化事件监听
-  queryEntitiesInView();
-  handleTerrainReady();
-  leftClick();
-  rightClick();
+  queryEntitiesInView()
+  handleTerrainReady()
+  leftClick()
+  rightClick()
 
-  return viewer;
+  return viewer
 }
 
 /**
@@ -133,19 +140,19 @@ export function initializeCesium(refEl) {
 export function flyToBoundary(options: any, complete?) {
   let { boundary, L, B, pad, orientation } = options
   return safeCesiumOperation((viewer) => {
-    let destination;
+    let destination
 
     if (isArray(boundary) && boundary.length > 0) {
-      pad = pad || FLY_TO_CONFIG.DEFAULT_PAD;
-      const bbox = turfBbox(turfPolygon({ coordinates: [boundary] }));
+      pad = pad || FLY_TO_CONFIG.DEFAULT_PAD
+      const bbox = turfBbox(turfPolygon({ coordinates: [boundary] }))
       destination = Rectangle.fromDegrees(
         bbox[0] - pad,
         bbox[1] - pad,
         bbox[2] + pad,
-        bbox[3] + pad
-      );
+        bbox[3] + pad,
+      )
     } else {
-      destination = Cartesian3.fromDegrees(L, B, FLY_TO_CONFIG.DEFAULT_HEIGHT);
+      destination = Cartesian3.fromDegrees(L, B, FLY_TO_CONFIG.DEFAULT_HEIGHT)
     }
 
     viewer.camera.flyTo({
@@ -153,8 +160,8 @@ export function flyToBoundary(options: any, complete?) {
       duration: FLY_TO_CONFIG.DEFAULT_DURATION,
       orientation,
       complete,
-    });
-  }, '飞行到边界失败');
+    })
+  }, '飞行到边界失败')
 }
 
 /**
@@ -167,20 +174,16 @@ export function flyToBoundary(options: any, complete?) {
  * const screenPos = getEntityScreenPosition(entity, viewer);
  */
 export function getEntityScreenPosition(entity, viewer, result = new Cartesian2()) {
-  if (!entity || !entity.position) return null;
+  if (!entity || !entity.position) return null
 
   // 获取实时的笛卡尔坐标
-  const worldPos = entity.position.getValue(viewer.clock.currentTime);
-  if (!defined(worldPos)) return null;
+  const worldPos = entity.position.getValue(viewer.clock.currentTime)
+  if (!defined(worldPos)) return null
 
   // 世界坐标 → 屏幕坐标
-  const screenPos = SceneTransforms.worldToWindowCoordinates(
-    viewer.scene,
-    worldPos,
-    result
-  );
+  const screenPos = SceneTransforms.worldToWindowCoordinates(viewer.scene, worldPos, result)
 
-  return screenPos || null;
+  return screenPos || null
 }
 
 /**
@@ -192,35 +195,35 @@ export function getEntityScreenPosition(entity, viewer, result = new Cartesian2(
  * const position = getEntityPosition(entity, viewer);
  */
 export function getEntityPosition(entity, viewer) {
-  if (!entity || !entity.position) return null;
+  if (!entity || !entity.position) return null
 
-  let positionCart;
+  let positionCart
 
   // 统一取值方式
   if (defined(entity.position.getValue)) {
-    positionCart = entity.position.getValue(viewer.clock.currentTime);
+    positionCart = entity.position.getValue(viewer.clock.currentTime)
   } else if (defined(entity.position.getValueInReferenceFrame)) {
     positionCart = entity.position.getValueInReferenceFrame(
       viewer.clock.currentTime,
-      ReferenceFrame.FIXED
-    );
+      ReferenceFrame.FIXED,
+    )
   } else {
-    return null;
+    return null
   }
 
-  if (!defined(positionCart)) return null;
+  if (!defined(positionCart)) return null
 
   // 转换为经纬度
-  const cartographic = Cartographic.fromCartesian(positionCart);
-  const longitude = CesiumMath.toDegrees(cartographic.longitude);
-  const latitude = CesiumMath.toDegrees(cartographic.latitude);
-  const height = cartographic.height;
+  const cartographic = Cartographic.fromCartesian(positionCart)
+  const longitude = CesiumMath.toDegrees(cartographic.longitude)
+  const latitude = CesiumMath.toDegrees(cartographic.latitude)
+  const height = cartographic.height
 
   return {
     longitude: Number(longitude.toFixed(6)),
     latitude: Number(latitude.toFixed(6)),
     height: Number(height.toFixed(2)),
-  };
+  }
 }
 
 /**
@@ -232,25 +235,25 @@ export function getEntityPosition(entity, viewer) {
  * const geojson = entitiesToGeoJSON(entities);
  */
 export function entitiesToGeoJSON(entities, includeProperties = true) {
-  const features: any[] = [];
+  const features: any[] = []
   // 统一处理为数组
-  const entityArray = isArray(entities) ? entities : entities.values;
-  const now = JulianDate.now();
+  const entityArray = isArray(entities) ? entities : entities.values
+  const now = JulianDate.now()
 
   entityArray.forEach((entity) => {
     const feature: any = {
       type: 'Feature',
       geometry: null,
       properties: includeProperties ? {} : null,
-    };
+    }
 
-    let geometrySet = false;
+    let geometrySet = false
 
     // Point 几何
     if (entity.position) {
-      const cartesian = entity.position.getValue(now);
+      const cartesian = entity.position.getValue(now)
       if (cartesian) {
-        const cartographic = Cartographic.fromCartesian(cartesian);
+        const cartographic = Cartographic.fromCartesian(cartesian)
         feature.geometry = {
           type: 'Point',
           coordinates: [
@@ -258,88 +261,88 @@ export function entitiesToGeoJSON(entities, includeProperties = true) {
             CesiumMath.toDegrees(cartographic.latitude),
             cartographic.height || 0,
           ],
-        };
-        geometrySet = true;
+        }
+        geometrySet = true
       }
     }
     // LineString 几何
     else if (entity.polyline && entity.polyline.positions) {
-      const positions = entity.polyline.positions.getValue(now);
+      const positions = entity.polyline.positions.getValue(now)
       if (positions && positions.length > 1) {
         const coords = positions.map((pos) => {
-          const c = Cartographic.fromCartesian(pos);
+          const c = Cartographic.fromCartesian(pos)
           return [
             CesiumMath.toDegrees(c.longitude),
             CesiumMath.toDegrees(c.latitude),
             c.height || 0,
-          ];
-        });
-        feature.geometry = { type: 'LineString', coordinates: coords };
-        geometrySet = true;
+          ]
+        })
+        feature.geometry = { type: 'LineString', coordinates: coords }
+        geometrySet = true
       }
     }
     // Polygon 几何
     else if (entity.polygon && entity.polygon.hierarchy) {
-      const hierarchy = entity.polygon.hierarchy.getValue(now);
+      const hierarchy = entity.polygon.hierarchy.getValue(now)
       if (hierarchy && hierarchy.positions.length >= 3) {
-        const positions = hierarchy.positions;
+        const positions = hierarchy.positions
         const coords = positions.map((pos) => {
-          const c = Cartographic.fromCartesian(pos);
-          return [CesiumMath.toDegrees(c.longitude), CesiumMath.toDegrees(c.latitude)];
-        });
-        coords.push(coords[0]); // 闭合环
-        feature.geometry = { type: 'Polygon', coordinates: [coords] };
-        geometrySet = true;
+          const c = Cartographic.fromCartesian(pos)
+          return [CesiumMath.toDegrees(c.longitude), CesiumMath.toDegrees(c.latitude)]
+        })
+        coords.push(coords[0]) // 闭合环
+        feature.geometry = { type: 'Polygon', coordinates: [coords] }
+        geometrySet = true
       }
     }
 
     // 如果没有几何体，跳过
-    if (!geometrySet) return;
+    if (!geometrySet) return
 
     // 提取属性
     if (includeProperties && feature.properties) {
-      const props = feature.properties;
+      const props = feature.properties
 
       // 从 entity.properties 获取
       if (entity.properties) {
-        const propValue = entity.properties.getValue(now);
+        const propValue = entity.properties.getValue(now)
         if (propValue && typeof propValue === 'object') {
-          Object.assign(props, propValue);
+          Object.assign(props, propValue)
         }
       }
 
       // 常用字段
-      if (entity.name) props.name = entity.name;
+      if (entity.name) props.name = entity.name
       if (entity.description) {
-        const desc = entity.description.getValue(now);
-        if (desc) props.description = desc;
+        const desc = entity.description.getValue(now)
+        if (desc) props.description = desc
       }
 
       // billboard 图标路径
       if (entity.billboard && entity.billboard.image) {
-        const image = entity.billboard.image.getValue(now);
-        if (image) props.icon = image;
+        const image = entity.billboard.image.getValue(now)
+        if (image) props.icon = image
       }
 
       // label 文本
       if (entity.label && entity.label.text) {
-        const text = entity.label.text.getValue(now);
-        if (text) props.label = text;
+        const text = entity.label.text.getValue(now)
+        if (text) props.label = text
       }
 
       // 其他样式
       if (entity.billboard && entity.billboard.scale) {
-        props.scale = entity.billboard.scale.getValue(now);
+        props.scale = entity.billboard.scale.getValue(now)
       }
     }
 
-    features.push(feature);
-  });
+    features.push(feature)
+  })
 
   return {
     type: 'FeatureCollection',
     features: features,
-  };
+  }
 }
 
 /**
@@ -356,8 +359,8 @@ export function flyTo(destination, complete?) {
       destination,
       duration: FLY_TO_CONFIG.DEFAULT_DURATION,
       complete,
-    });
-  }, '飞行失败');
+    })
+  }, '飞行失败')
 }
 
 /**
@@ -366,25 +369,25 @@ export function flyTo(destination, complete?) {
  * @returns {void}
  */
 export function destroyCesium() {
-  const cesiumStore = useCesiumStore();
-  const viewer = toRaw(unref(cesiumStore.viewer));
-  console.log('Destroying Cesium viewer: ', viewer);
+  const cesiumStore = useCesiumStore()
+  const viewer = toRaw(unref(cesiumStore.viewer))
+  console.log('Destroying Cesium viewer: ', viewer)
 
-  if (!viewer) return;
+  if (!viewer) return
 
   // 防止重复销毁
   if (viewer.isDestroyed?.()) {
-    cesiumStore.setViewer(null);
-    return;
+    cesiumStore.setViewer(null)
+    return
   }
 
   try {
-    viewer.isDestroyed() || viewer.destroy();
+    viewer.isDestroyed() || viewer.destroy()
   } catch (e: any) {
-    console.warn('Cesium destroy 过程出现异常:', e);
+    console.warn('Cesium destroy 过程出现异常:', e)
   } finally {
-    cesiumStore.setViewer(null);
-    console.log('Cesium Viewer destroyed');
+    cesiumStore.setViewer(null)
+    console.log('Cesium Viewer destroyed')
   }
 }
 
@@ -396,17 +399,20 @@ export function destroyCesium() {
  * @example
  * const center = getPolylineGeometricCenter(positions, 10);
  */
-export function getPolylineGeometricCenter(positions, heightOffset = GEOMETRY_CONFIG.DEFAULT_HEIGHT_OFFSET) {
-  const center = computeGeometricCenter(positions);
+export function getPolylineGeometricCenter(
+  positions,
+  heightOffset = GEOMETRY_CONFIG.DEFAULT_HEIGHT_OFFSET,
+) {
+  const center = computeGeometricCenter(positions)
 
-  if (!center) return undefined;
+  if (!center) return undefined
 
   // 抬高（最常见做法）
   if (heightOffset !== 0) {
-    const carto = Cartographic.fromCartesian(center);
-    carto.height += heightOffset;
-    return Cartographic.toCartesian(carto);
+    const carto = Cartographic.fromCartesian(center)
+    carto.height += heightOffset
+    return Cartographic.toCartesian(carto)
   }
 
-  return center;
+  return center
 }
