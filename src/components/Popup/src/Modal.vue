@@ -1,7 +1,7 @@
 <template>
   <BaseDraggableModal
     :title="props.modalContent?.title || '详情'"
-    :showModal="props.showModal"
+    :open="props.showModal"
     :mask="props.mask"
     width="260px"
     @afterClose="afterClose"
@@ -25,10 +25,10 @@
 </template>
 
 <script setup lang="ts">
-import Descriptions from './Descriptions.vue';
-import Menu from './Menu.vue';
-import ModelSlider from './ModelSlider.vue';
-import BaseDraggableModal from './BaseDraggableModal.vue';
+import Descriptions from './Descriptions.vue'
+import Menu from './Menu.vue'
+import ModelSlider from './ModelSlider.vue'
+import BaseDraggableModal from './BaseDraggableModal.vue'
 
 const props = defineProps({
   modalContent: { type: Object as any, default: () => ({}) },
@@ -39,12 +39,12 @@ const props = defineProps({
   mask: {
     type: Boolean,
     default: true,
-  }
-});
+  },
+})
 
-const emit = defineEmits(['afterClose']);
+const emit = defineEmits(['afterClose'])
 
 function afterClose(val) {
-  emit('afterClose', val);
+  emit('afterClose', val)
 }
 </script>

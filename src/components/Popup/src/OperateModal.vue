@@ -1,14 +1,24 @@
 <template>
-  <BaseDraggableModal :title="props.mine?.name || '操作'" :open="props.showModal" :mask="props.mask" width="220px"
-    @afterClose="afterClose" @ok="handleOk">
-    <Operate :mine="props.mine" :initialCheckedKeys="props.initialCheckedKeys"
-      @checkedKeysChange="handleCheckedKeysChange" />
+  <BaseDraggableModal
+    :title="props.mine?.name || '操作'"
+    :open="props.showModal"
+    :mask="props.mask"
+    width="220px"
+    @afterClose="afterClose"
+    @ok="handleOk"
+  >
+    <Operate
+      :mine="props.mine"
+      :showModal="props.showModal"
+      :initialCheckedKeys="props.initialCheckedKeys"
+      @checkedKeysChange="handleCheckedKeysChange"
+    />
   </BaseDraggableModal>
 </template>
 
 <script setup lang="ts">
-import Operate from './Operate.vue';
-import BaseDraggableModal from './BaseDraggableModal.vue';
+import Operate from './Operate.vue'
+import BaseDraggableModal from './BaseDraggableModal.vue'
 
 const props = defineProps({
   mine: Object,
@@ -22,21 +32,21 @@ const props = defineProps({
   },
   initialCheckedKeys: {
     type: Array,
-    default: () => []
-  }
-});
+    default: () => [],
+  },
+})
 
-const emit = defineEmits(['afterClose', 'ok', 'checkedKeysChange']);
+const emit = defineEmits(['afterClose', 'ok', 'checkedKeysChange'])
 
 function afterClose(val) {
-  emit('afterClose', val);
+  emit('afterClose', val)
 }
 
 function handleOk() {
-  emit('ok');
+  emit('ok')
 }
 
 function handleCheckedKeysChange(keys) {
-  emit('checkedKeysChange', keys);
+  emit('checkedKeysChange', keys)
 }
 </script>
