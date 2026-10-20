@@ -2,7 +2,7 @@ import { unref, toRaw, watch, ref } from 'vue'
 import {
   Cartesian3,
   Cartographic,
-  sampleTerrainMostDetailed,
+  sampleTerrain,
   Cartesian2,
   ImageMaterialProperty,
   ClippingPolygon,
@@ -12,6 +12,7 @@ import {
 import { notification } from 'ant-design-vue'
 
 import { flyToBoundary } from './index'
+import { CLIPPING_CONFIG } from './constants'
 import { isArray } from '../is'
 import { useSetting } from '@/hooks/setting/useSetting'
 import { turfPolygon, densifyPolygon, turfConcave, turfUnion, turfTransformScale } from '../turf'
@@ -69,6 +70,17 @@ export function clearClippingWithElevation() {
 }
 
 /**
+ * 过滤坐标环中的非法值（NaN/undefined 等），避免进入几何管线导致渲染停止
+ * @param {number[][]} coordinates - [lng, lat] 坐标环
+ * @returns {number[][]} 仅含有限数值的坐标环
+ */
+function sanitizeRing(coordinates) {
+  return (coordinates || []).filter(
+    (coord) => isArray(coord) && Number.isFinite(coord[0]) && Number.isFinite(coord[1]),
+  )
+}
+
+/**
  * 经纬度环转闭合的 Cartesian3 数组（供 ClippingPolygon 使用）
  * @param {number[][]} coordinates - [lng, lat] 坐标环
  * @returns {Array<Cartesian3>} 闭合环的笛卡尔坐标数组
@@ -81,6 +93,94 @@ function toClosedPositions(coordinates) {
       ? coordinates
       : coordinates.concat([first])
   return closed.map((coord) => Cartesian3.fromDegrees(coord[0], coord[1]))
+}
+
+/**
+ * 等待真实地形提供程序就绪（Viewer 初始为椭球占位，World Terrain 异步加载后才替换）
+ * 超时后返回当前 provider，退化到既有行为
+ * @param {Cesium.Viewer} viewer - Cesium viewer
+ * @param {number} [timeout=5000] - 等待超时（毫秒）
+ * @returns {Promise<Cesium.TerrainProvider>} 地形提供程序
+ */
+function whenTerrainReady(viewer, timeout = 5000) {
+  const provider = viewer.terrainProvider
+  // 椭球占位 provider 没有 availability，真实地形（World Terrain）才有
+  if (provider.availability) return Promise.resolve(provider)
+  return new Promise((resolve) => {
+    const timer = setTimeout(finish, timeout)
+    function finish() {
+      clearTimeout(timer)
+      removeChanged()
+      resolve(viewer.terrainProvider)
+    }
+    const removeChanged = viewer.scene.terrainProviderChanged.addEventListener(() => {
+      if (viewer.terrainProvider.availability) finish()
+    })
+  })
+}
+
+/**
+ * 预加载墙体贴图：实体添加后贴图若未就绪会先显示为白色，先预热浏览器缓存
+ * @returns {Promise<void>} 两张贴图均完成加载（失败也放行）后 resolve
+ */
+function preloadWallTextures() {
+  const load = (src: string) =>
+    new Promise<void>((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve()
+      img.onerror = () => resolve()
+      img.src = src
+    })
+  return Promise.all([load(TEXTURE_PATH_1), load(TEXTURE_PATH_2)])
+}
+
+/**
+ * 采样地形并添加裁剪墙体
+ * 固定层级采样：最精细采样需拉取覆盖区全部深层地形瓦片（World Terrain 走外网，动辄上千请求），
+ * 墙体仅需贴地美观，固定层级（约 1km 瓦片）整片区域只需少量请求
+ * @param {Array<Cartesian3>} positions - 墙体位置数组
+ * @param {Array<Cartographic>} terrHeights - 待采样的地形点（就地回填高度）
+ * @param {number} minZ - 最小高度值
+ * @returns {Promise<void>} 墙体就绪（添加或判定跳过）后 resolve；整体有超时兜底
+ */
+function buildWall(positions, terrHeights, minZ): Promise<void> {
+  return safeCesiumOperation((viewer) => {
+    // 贴图与采样并行预热
+    const texturesReady = preloadWallTextures()
+    const task = whenTerrainReady(viewer)
+      .then((provider) => {
+        // 采样后检查有效高度：瓦片请求失败时 Cesium 会把对应点高度置为 undefined
+        const sample = (level: number) =>
+          sampleTerrain(provider, level, terrHeights).then(() =>
+            terrHeights.some((e) => Number.isFinite(e.height)),
+          )
+        return sample(CLIPPING_CONFIG.TERRAIN_SAMPLE_LEVEL).then((ok) => {
+          if (ok) return true
+          console.warn(
+            `层级 ${CLIPPING_CONFIG.TERRAIN_SAMPLE_LEVEL} 采样全部失败（provider: ${provider.constructor.name}），降级到层级 ${CLIPPING_CONFIG.TERRAIN_RETRY_LEVEL} 重试`,
+          )
+          return sample(CLIPPING_CONFIG.TERRAIN_RETRY_LEVEL)
+        })
+      })
+      .then((ok) => {
+        return texturesReady.then(() => {
+          if (!ok) {
+            console.warn('地形采样仍不可用，跳过墙体绘制（裁切本身不受影响）')
+            return
+          }
+          console.log('Terrain samples processed successfully')
+          addWall(positions, terrHeights, minZ)
+        })
+      })
+      .catch((error) => {
+        console.error('Error sampling terrain:', error)
+      })
+    // 采样异常挂起时兜底放行，避免裁切被无限拖住
+    return Promise.race([
+      task,
+      new Promise<void>((resolve) => setTimeout(resolve, CLIPPING_CONFIG.WALL_BUILD_TIMEOUT)),
+    ])
+  }, '地形采样失败')
 }
 
 /**
@@ -133,9 +233,19 @@ export function mineClipping(mine, is) {
   }
 
   setPageLoading(true)
-  const { boundary, minZ } = mine
+  const { minZ } = mine
+  // 过滤非法坐标，避免 NaN 进入几何管线
+  const boundary = sanitizeRing(mine.boundary)
 
   try {
+    if (boundary.length < 3) {
+      notification['error']({
+        description: '矿山边界数据无效, 请检查数据!',
+      } as any)
+      setPageLoading(false)
+      return
+    }
+
     // 处理边界
     const _boundary = turfPolygon({ coordinates: [boundary] })
     const tfPolygon = densifyPolygon(_boundary, 100)
@@ -146,19 +256,10 @@ export function mineClipping(mine, is) {
     // 裁剪多边形用原始边界：加密不改变形状，却让逐像素点内判定的边数成倍增长
     const clipPositions = toClosedPositions(boundary)
 
+    // 墙体采样不依赖相机，立即开始；裁切与墙体就绪后同步生效
+    const wallTask = buildWall(positions, cartographic, minZ)
     flyToBoundary({ boundary, pad: 0.01 }, () => {
-      safeCesiumOperation((viewer) => {
-        // 裁剪不依赖地形高度，先应用；加密后的墙体等最精细地形采样完成后再补
-        clipping(clipPositions)
-        sampleTerrainMostDetailed(viewer.terrainProvider, cartographic)
-          .then(() => {
-            console.log('Terrain samples processed successfully')
-            addWall(positions, cartographic, minZ)
-          })
-          .catch((error) => {
-            console.error('Error sampling terrain:', error)
-          })
-      }, '地形采样失败')
+      wallTask.then(() => clipping(clipPositions))
     })
   } catch (error: any) {
     setPageLoading(false)
@@ -177,12 +278,28 @@ export function mineClipping(mine, is) {
  */
 function addWall(positions, terrHeights, minZ = 0) {
   safeCesiumOperation((viewer) => {
+    // 高度残缺点直接进几何管线会在 worker 里抛 NaN 异常打停渲染循环，这里统一防御
+    const finiteHeights = terrHeights.map((e) => e.height).filter(Number.isFinite)
+    if (finiteHeights.length === 0 || !Number.isFinite(minZ)) {
+      console.error('裁剪墙体高度数据无效，跳过墙体绘制:', {
+        minZ,
+        sampled: finiteHeights.length,
+        total: terrHeights.length,
+      })
+      return
+    }
+    // 采样失败的点回退到最低采样高度，保证墙体不悬空
+    const fallbackHeight = Math.min(...finiteHeights)
+    const minimumHeights = terrHeights.map(
+      (e) =>
+        (Number.isFinite(e.height) ? e.height : fallbackHeight) + CLIPPING_CONFIG.WALL_TERRAIN_BIAS,
+    )
     // 添加墙体
     const wall1 = viewer.entities.add({
       id: ENTITY_IDS[0],
       wall: {
         positions: positions,
-        minimumHeights: terrHeights.map((e) => e.height),
+        minimumHeights,
         maximumHeights: new Array(positions.length).fill(minZ),
         material: new ImageMaterialProperty({
           image: TEXTURE_PATH_1,
@@ -237,10 +354,10 @@ export function traverseBoundaryClipping(mine, is) {
         minZ = -100
       if (mineBoundary && traverse) {
         const _polygon = turfConcave(traverse)
-        minZ = traverse.minZ
+        minZ = traverse.minZ ?? -100
         polygon = turfUnion(mineBoundary, _polygon)
       } else if (traverse) {
-        minZ = traverse.minZ
+        minZ = traverse.minZ ?? -100
         polygon = turfConcave(traverse)
       } else if (mineBoundary) {
         polygon = mineBoundary
@@ -282,25 +399,22 @@ export function geojsonClipping(geojson, minZ) {
     return
   }
 
-  const coordinates = geojson.geometry.coordinates[0]
+  // 过滤非法坐标，避免 NaN 进入几何管线；数据不足时直接退出
+  const coordinates = sanitizeRing(geojson.geometry.coordinates[0])
+  if (coordinates.length < 3) {
+    console.error('Invalid GeoJSON data: ring has fewer than 3 valid points')
+    return
+  }
   const positions = coordinates.map((coord) => Cartesian3.fromDegrees(coord[0], coord[1]))
   const cartographics = positions.map((pos) => Cartographic.fromCartesian(pos))
   // 裁剪多边形用未加密的原始环，避免逐像素判定边数膨胀
   const clipPositions = toClosedPositions(coordinates)
 
   try {
+    // 墙体采样不依赖相机，立即开始；裁切与墙体就绪后同步生效
+    const wallTask = buildWall(positions, cartographics, minZ)
     flyToBoundary({ boundary: coordinates, pad: 0.01 }, () => {
-      safeCesiumOperation((viewer) => {
-        // 裁剪不依赖地形高度，先应用；墙体等采样完成后异步补齐
-        clipping(clipPositions)
-        sampleTerrainMostDetailed(viewer.terrainProvider, cartographics)
-          .then(() => {
-            addWall(positions, cartographics, minZ)
-          })
-          .catch((error) => {
-            console.error('Error sampling terrain in geojsonClipping:', error)
-          })
-      }, 'GeoJSON裁剪失败')
+      wallTask.then(() => clipping(clipPositions))
     })
   } catch (error: any) {
     console.error('Error in geojsonClipping:', error)

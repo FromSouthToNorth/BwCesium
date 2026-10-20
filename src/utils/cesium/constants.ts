@@ -60,6 +60,18 @@ export const MODEL_CONFIG = {
   TUNNEL_TEXTURE_MAX_SIZE: 2048,
 }
 
+// 裁切配置
+export const CLIPPING_CONFIG = {
+  // 墙体地形采样层级：固定层级整片区域只需少量瓦片，最精细采样会拉取覆盖区的全部深层瓦片（上千个外网请求）
+  TERRAIN_SAMPLE_LEVEL: 14,
+  // 指定层级采样全部失败时的降级重试层级
+  TERRAIN_RETRY_LEVEL: 10,
+  // 墙体构建整体超时（毫秒），超时后裁切先生效，墙体后续补齐
+  WALL_BUILD_TIMEOUT: 15_000,
+  // 墙体底边相对采样高度的抬升量（米），抵消低层级采样误差，防止墙体顶边陷入地形出现缝隙
+  WALL_TERRAIN_BIAS: 2,
+}
+
 // 圆柱体配置（用于钻孔等）
 export const CYLINDER_CONFIG = {
   DEFAULT_RADIUS: 1.5,
