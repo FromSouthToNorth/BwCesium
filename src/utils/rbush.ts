@@ -160,12 +160,10 @@ export function offsetMinePoint(data) {
   console.log('Final collisions:', finalCollisions);
 
   updatedPoints.forEach(({ B, L, MineDesc }) => {
-    for (const { MineDesc } of data) {
-      if (MineDesc === MineDesc) {
-        data.B = B;
-        data.L = L;
-        break;
-      }
+    const item = data.find((e: any) => e.MineDesc === MineDesc);
+    if (item) {
+      item.B = B;
+      item.L = L;
     }
   });
   return data

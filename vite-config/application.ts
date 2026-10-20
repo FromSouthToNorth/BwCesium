@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 
 import dayjs from 'dayjs'
 import { readPackageJSON } from 'pkg-types'
-import { defineConfig, loadEnv, mergeConfig } from 'vite'
+import { defineConfig, mergeConfig } from 'vite'
 import type { ConfigEnv, UserConfig } from 'vite'
 
 import { commonConfig } from './common'
@@ -19,12 +19,7 @@ function defineApplicationConfig(defineOptions: ApplicationOptions = {}) {
   return defineConfig(async ({ command, mode }: ConfigEnv) => {
     const root = process.cwd()
     const isBuild = command === 'build'
-    const { VITE_BUILD_COMPRESS } = loadEnv(
-      mode,
-      root,
-    )
-
-    const plugins = await createPlugins({ isBuild, root, compress: VITE_BUILD_COMPRESS })
+    const plugins = await createPlugins({ isBuild, root })
 
     const defineData = await createDefineData(root)
 
@@ -38,11 +33,6 @@ function defineApplicationConfig(defineOptions: ApplicationOptions = {}) {
           {
             find: /@\//,
             replacement: `${pathResolve('src')}/`,
-          },
-          // #/xxxx => types/xxxx
-          {
-            find: /#\//,
-            replacement: `${pathResolve('types')}/`,
           },
         ],
       },

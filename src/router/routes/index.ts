@@ -1,12 +1,3 @@
-export const RootRoute = {
-  path: '/',
-  name: 'Root',
-  redirect: '/groupAndCompany',
-  meta: {
-    title: 'Root',
-  },
-}
-
 export const IndexRoute = {
   path: '/',
   name: 'Index',
@@ -24,18 +15,9 @@ export const IndexRoute = {
         title: '一张图',
       },
     },
-    {
-      path: '/three',
-      name: 'Three',
-      component: () => import('@/views/Three.vue'),
-      meta: {
-        title: 'Three',
-      },
-    },
   ],
 }
 
 export const basicRoutes = [
-  RootRoute,
   IndexRoute,
 ]

@@ -1,5 +1,4 @@
 import { Mqtt } from './Mqtt'
-import { formatDuration, createStatusHTML, exportStatusAsJSON, showAdvancedStatusModal } from './status'
 
 /**
  * MQTT 模块入口文件
@@ -276,66 +275,6 @@ export function getMqttConnectionDuration() {
 }
 
 // ==================== 高级状态监测函数 ====================
-
-/**
- * 显示高级状态监测弹窗（带刷新按钮）
- * 使用 ant-design-vue Modal 组件显示详细的连接状态信息
- * @param {Function} [onRefresh] - 刷新时的回调函数
- * @example
- * // 在 Vue 组件中使用
- * import { showAdvancedMqttStatusModal } from '@/utils/mqtt'
- * 
- * showAdvancedMqttStatusModal(() => {
- *   console.log('用户点击了刷新')
- * })
- */
-export function showAdvancedMqttStatusModal(onRefresh) {
-  const status = mqtt.getStatusInfo()
-  showAdvancedStatusModal(status, onRefresh)
-}
-
-/**
- * 获取 MQTT 状态的 HTML 字符串
- * 用于在自定义弹窗或其他 UI 中显示状态信息
- * @returns {string} HTML 字符串
- */
-export function getMqttStatusHTML() {
-  const status = mqtt.getStatusInfo()
-  return createStatusHTML(status)
-}
-
-/**
- * 获取格式化的连接时长
- * @returns {string} 格式化的时长字符串（如 "1小时30分45秒"）
- */
-export function getFormattedConnectionDuration() {
-  const seconds = mqtt.getConnectionDuration()
-  return formatDuration(seconds)
-}
-
-/**
- * 将 MQTT 状态导出为 JSON 字符串
- * 用于日志记录或调试
- * @returns {string} JSON 格式的状态信息
- */
-export function exportMqttStatus() {
-  const status = mqtt.getStatusInfo()
-  return exportStatusAsJSON(status)
-}
-
-/**
- * 将 MQTT 状态信息复制到剪贴板
- * @returns {void}
- */
-export async function copyMqttStatusToClipboard() {
-  try {
-    const statusJSON = exportMqttStatus()
-    await navigator.clipboard.writeText(statusJSON)
-    console.log('[MQTT] 状态信息已复制到剪贴板')
-  } catch (error: any) {
-    console.error('[MQTT] 复制剪贴板失败', error)
-  }
-}
 
 // ==================== 默认导出 ====================
 

@@ -5,7 +5,7 @@ import { configHtmlPlugin } from './html'
 import { configCesiumPlugin } from './cesium'
 import { configSvgPlugin } from './svg'
 
-async function createPlugins({ isBuild, root: _root, compress: _compress }: { isBuild: boolean, root?: string, compress?: string }): Promise<PluginOption[]> {
+async function createPlugins({ isBuild, root: _root }: { isBuild: boolean, root?: string }): Promise<PluginOption[]> {
   const vitePlugins: PluginOption[] = [vue(), vueJsx()]
 
   // vite-plugin-html

@@ -3,8 +3,7 @@
   "include": [
     "env.d.ts",
     "src/**/*",
-    "src/**/*.vue",
-    "types/**/*"
+    "src/**/*.vue"
   ],
   "exclude": [
     "node_modules",
@@ -15,9 +14,6 @@
     "paths": {
       "@/*": [
         "src/*"
-      ],
-      "#/*": [
-        "types/*"
       ]
     },
     "noEmit": true,
