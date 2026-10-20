@@ -23,16 +23,65 @@ import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine'
 
 // 使用辅助函数
 import { getViewer, safeCesiumOperation, clearEntityArray } from './helpers'
+// 贴图用模块方式引入，生产构建才会被打包（原先的 /src/assets 路径只在开发环境有效）
+import wallTextureUrl from '@/assets/clipping/wall_strata.jpg'
+import floorTextureUrl from '@/assets/clipping/floor_coal.jpg'
 
 const { getTraverseBoundaryGeoJSON } = useGroupCompanyLevelMine()
 
 const { setPageLoading } = useSetting()
 
 // 常量配置
-const TEXTURE_PATH_1 = '/src/assets/soil_texture.png'
-const TEXTURE_PATH_2 = '/src/assets/soil_texture2.png'
+/** 贴图单块对应的实地尺寸（米）：按几何尺寸换算重复次数，避免拉伸失真 */
+const TEXTURE_TILE_METERS = 45
 const ENTITY_IDS = ['ClippingWall', 'ClippingWallDM']
 const clippingEntities: any[] = []
+
+/**
+ * 计算墙体贴图重复次数：沿墙长与沿墙高各自换算，保证贴图为近似正方形
+ * @param {Array<Cartesian3>} positions - 墙体位置
+ * @param {Array<number>} heights - 各点墙高（米）
+ * @returns {Cartesian2} 重复次数（s=沿墙, t=沿高）
+ */
+function computeWallRepeat(positions, heights) {
+  let perimeter = 0
+  for (let i = 0; i < positions.length; i++) {
+    perimeter += Cartesian3.distance(positions[i], positions[(i + 1) % positions.length])
+  }
+  const meanHeight = heights.reduce((sum, h) => sum + h, 0) / Math.max(heights.length, 1)
+  return new Cartesian2(
+    Math.max(1, perimeter / TEXTURE_TILE_METERS),
+    Math.max(1, Math.abs(meanHeight) / TEXTURE_TILE_METERS),
+  )
+}
+
+/**
+ * 计算多边形底纸的重复次数：按包围盒的经纬跨度换算
+ * @param {Array<Cartesian3>} positions - 多边形顶点
+ * @returns {Cartesian2} 重复次数
+ */
+function computePolygonRepeat(positions) {
+  let minLon = Infinity
+  let maxLon = -Infinity
+  let minLat = Infinity
+  let maxLat = -Infinity
+  positions.forEach((position) => {
+    const carto = Cartographic.fromCartesian(position)
+    const lon = CesiumMath.toDegrees(carto.longitude)
+    const lat = CesiumMath.toDegrees(carto.latitude)
+    if (lon < minLon) minLon = lon
+    if (lon > maxLon) maxLon = lon
+    if (lat < minLat) minLat = lat
+    if (lat > maxLat) maxLat = lat
+  })
+  const midLat = ((minLat + maxLat) / 2) * (Math.PI / 180)
+  const width = (maxLon - minLon) * 111320 * Math.cos(midLat)
+  const height = (maxLat - minLat) * 111320
+  return new Cartesian2(
+    Math.max(1, width / TEXTURE_TILE_METERS),
+    Math.max(1, height / TEXTURE_TILE_METERS),
+  )
+}
 
 /**
  * 清除裁剪墙体实体
@@ -131,7 +180,7 @@ function preloadWallTextures() {
       img.onerror = () => resolve()
       img.src = src
     })
-  return Promise.all([load(TEXTURE_PATH_1), load(TEXTURE_PATH_2)])
+  return Promise.all([load(wallTextureUrl), load(floorTextureUrl)])
 }
 
 /**
@@ -302,8 +351,11 @@ function addWall(positions, terrHeights, minZ = 0) {
         minimumHeights,
         maximumHeights: new Array(positions.length).fill(minZ),
         material: new ImageMaterialProperty({
-          image: TEXTURE_PATH_1,
-          repeat: new Cartesian2(80, 80),
+          image: wallTextureUrl,
+          repeat: computeWallRepeat(
+            positions,
+            minimumHeights.map((h) => minZ - h),
+          ),
         }),
       },
     })
@@ -315,8 +367,8 @@ function addWall(positions, terrHeights, minZ = 0) {
       polygon: {
         hierarchy: positions,
         material: new ImageMaterialProperty({
-          image: TEXTURE_PATH_2,
-          repeat: new Cartesian2(80, 80),
+          image: floorTextureUrl,
+          repeat: computePolygonRepeat(positions),
         }),
         height: minZ,
       },
