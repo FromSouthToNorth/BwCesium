@@ -15,7 +15,7 @@ import {
 
 import { getLabelConfig, LABEL_PRESETS } from './labelConfig';
 import { getGroundHole } from '../mqtt/publish';
-import { useGroupCompanyLevelMine } from '@/components/GroupAndCompany/src/hooks/useGroupCompanyLevelMine';
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine';
 import { getViewer, clearEntityArray, addEntities } from './helpers';
 import { CYLINDER_CONFIG } from './constants';
 

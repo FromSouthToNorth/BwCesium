@@ -184,24 +184,6 @@ function findMissingKeys(tree, keys) {
 
 <template>
   <div>
-    <!-- <Checkbox v-model:checked="cut">
-      裁切
-    </Checkbox>
-    <Checkbox v-model:checked="tunnel">
-      巷道
-    </Checkbox>
-    <Checkbox v-model:checked="tunnelModel">
-      巷道模型
-    </Checkbox>
-    <Checkbox v-model:checked="safe">
-      安全监测
-    </Checkbox>
-    <Checkbox v-model:checked="hole">
-      地面钻孔
-    </Checkbox>
-    <Checkbox v-model:checked="water">
-      积水区
-    </Checkbox> -->
     <Tree checkable :tree-data="treeData" :showLine="true" @check="check" defaultExpandAll
       v-model:checkedKeys="checkedKeys" />
   </div>

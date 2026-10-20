@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, unref, watch, onUnmounted, onMounted, toRaw, nextTick } from 'vue';
 import { InputNumber } from 'ant-design-vue';
-// import Slider from '@/components/Slider/index.vue'
 import { translateModel, getViewer } from '@/utils/cesium';
 import { Color as CesiumColor, CallbackProperty, Model, Math } from 'cesium';
 
@@ -16,10 +15,6 @@ const props = defineProps({
   }
 });
 
-// 原点参考点
-// const originPoint = ref<any>(null);
-
-// 位置参数
 const translation = ref({
   x: 0,
   y: 0,
@@ -44,14 +39,6 @@ const positionCallback = new CallbackProperty(() => {
   return null;
 }, false);
 
-// 更新原点位置
-// function updatePosition() {
-//   if (originPoint.value && props.model && props.model.boundingSphere) {
-//     originPoint.value.position = positionCallback;
-//   }
-// }
-
-// 重置参数函数
 const resetTranslation = () => {
   translation.value = { x: 0, y: 0, z: 0 };
 };
@@ -97,14 +84,6 @@ onMounted(async () => {
     }
     const viewer = getViewer();
 
-    // 添加原点参考点
-    // originPoint.value = viewer.entities.add({
-    //   position: props.model.boundingSphere.center,
-    //   model: {
-    //     uri: '/src/assets/models/axis.glb',
-    //     scale: 0.1,
-    //   }
-    // });
   } catch (error: any) {
     console.error('Error initializing ModelSlider component:', error);
   }
@@ -114,11 +93,6 @@ onMounted(async () => {
 onUnmounted(() => {
   try {
     const viewer = getViewer();
-    // if (originPoint.value && viewer && viewer.entities) {
-    //   viewer.entities.remove(originPoint.value);
-    //   originPoint.value = null;
-    //   console.log('ModelSlider component cleaned up');
-    // }
   } catch (error: any) {
     console.error('Error during component cleanup:', error);
   }

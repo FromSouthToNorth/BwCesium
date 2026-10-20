@@ -14,7 +14,7 @@ import {
   getTypeDescriptions,
 } from './types'
 import { stringEndNumber } from '@/utils/stringEndNumber'
-import { useGroupCompanyLevelMine } from '@/components/GroupAndCompany/src/hooks/useGroupCompanyLevelMine'
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine'
 import { offsetMinePoint } from '@/utils/rbush'
 import { notification, Modal, message, Button } from 'ant-design-vue'
 import { h } from 'vue'
@@ -134,7 +134,6 @@ function handleGroupCompanyLevelMine(result) {
   // 偏移矿井点（避免重叠）
   params.data = offsetMinePoint([...processedData])
 
-  // 注释掉的列生成逻辑（保留供参考）
   // const columns = []
   // const keys = Object.keys(processedData[0])
   // keys.forEach((key) => {

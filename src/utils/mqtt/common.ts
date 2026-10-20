@@ -120,8 +120,8 @@ export function buildClientOptions(clientId, caller, mineDesc, token) {
 
   return {
     clientId,
-    username: 'bowwell',
-    password: 'bowwell',
+    username: import.meta.env.VITE_MQTT_USERNAME,
+    password: import.meta.env.VITE_MQTT_PASSWORD,
     keepalive: 10,
     reconnectPeriod: 10000, // 两次重新连接之间的间隔（毫秒）
     connectTimeout: 30 * 1000, // 等待收到 CONNACK 的时间（毫秒）

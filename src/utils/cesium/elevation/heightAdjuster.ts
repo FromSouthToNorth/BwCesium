@@ -276,13 +276,6 @@ export function getEntityHeight(entity, viewer) {
       const heights = getPolygonHeights(entity, viewer);
       if (!heights) return null;
 
-      // 计算平均高度
-      const allHeights = [...heights.boundary];
-      for (const hole of heights.holes) {
-        allHeights.push(...hole);
-      }
-      const validHeights = allHeights.filter(h => h !== null);
-
       return {
         type: 'polygon',
         boundary: heights.boundary,
@@ -324,26 +317,6 @@ export function getEntityHeight(entity, viewer) {
     console.error('Error getting entity height:', error);
     return null;
   }
-}
-
-/**
- * 保存实体的原始高度
- * @param {string} entityId - 实体ID
- * @param {number} height - 原始高度
- */
-export function saveOriginalHeight(entityId, height) {
-  if (entityId && height !== null && height !== undefined) {
-    originalHeights.set(entityId, height);
-  }
-}
-
-/**
- * 获取实体的原始高度
- * @param {string} entityId - 实体ID
- * @returns {number|null} 原始高度，如果未保存则返回null
- */
-export function getOriginalHeight(entityId) {
-  return originalHeights.get(entityId) || null;
 }
 
 /**
@@ -1019,8 +992,6 @@ export function adjustEntityHeight(entity, offset, viewer) {
         const newHoles = heightInfo.holes?.map(hole =>
           hole.map(h => h !== null ? h + offset : null)
         );
-        const allHeights = [...(newBoundary ?? []), ...(newHoles ?? [])].flatMap(h => h ?? []);
-        const validHeights = allHeights.filter(h => h !== null);
 
         newHeightInfo = {
           type: 'polygon',

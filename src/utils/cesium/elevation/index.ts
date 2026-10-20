@@ -5,19 +5,16 @@
 
 import {
   getActiveClippingPolygon,
-  hasActiveClipping,
   getClippingAreaInfo
 } from './clippingIntegration';
 import {
   getEntitiesInClippingArea,
-  getEntityStatistics,
-  getEntitiesInfo
+  getEntityStatistics
 } from './entitySelector';
 import {
   getHeightAdjustmentStats,
   batchAdjustHeight,
-  batchRestoreHeight,
-  clearAllOriginalHeights
+  batchRestoreHeight
 } from './heightAdjuster';
 
 /**
@@ -199,39 +196,3 @@ export function canRestoreElevation() {
     info
   };
 }
-
-/**
- * 清除所有高度调整相关数据
- */
-export function clearElevationData() {
-  clearAllOriginalHeights();
-}
-
-/**
- * 高程控制模块工具函数集合
- */
-export const elevationUtils = {
-  // 裁切区域相关
-  getActiveClippingPolygon,
-  hasActiveClipping,
-  getClippingAreaInfo,
-
-  // 实体相关
-  getEntitiesInClippingArea,
-  getEntityStatistics,
-  getEntitiesInfo,
-
-  // 高度调整相关
-  adjustClippingAreaElevation,
-  restoreClippingAreaElevation,
-  getClippingElevationInfo,
-
-  // 状态检查
-  canAdjustElevation,
-  canRestoreElevation,
-
-  // 清理
-  clearElevationData
-};
-
-export default elevationUtils;

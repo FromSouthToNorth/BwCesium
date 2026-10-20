@@ -18,7 +18,7 @@ import {
 import { message as andMessage } from 'ant-design-vue';
 
 // 使用辅助函数和常量
-import { getViewer, safeCesiumOperation, withErrorHandling } from './helpers';
+import { getViewer, safeCesiumOperation } from './helpers';
 import { MODEL_CONFIG } from './constants';
 
 // 模型管理

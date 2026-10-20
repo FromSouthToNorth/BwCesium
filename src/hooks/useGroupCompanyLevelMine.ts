@@ -1,7 +1,7 @@
 import { computed, ref, unref, type Ref } from 'vue'
 import type { FeatureCollection } from 'geojson'
-import type { MenuOperation } from '../fun'
-import { fun } from '../fun'
+import type { MenuOperation } from '@/utils/menuOperations'
+import { fun } from '@/utils/menuOperations'
 
 // ==================== 业务数据类型 ====================
 

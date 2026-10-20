@@ -18,7 +18,7 @@ import {
 
 import { turfCentroid, turfPolygon } from '@/utils/turf';
 import { getWaterArea } from '../mqtt/publish';
-import { useGroupCompanyLevelMine } from '@/components/GroupAndCompany/src/hooks/useGroupCompanyLevelMine';
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine';
 import { getViewer, addEntities, removeEntities } from './helpers';
 import { getLabelConfig, LABEL_PRESETS } from './labelConfig';
 import { WATER_AREA_CONFIG } from './constants';

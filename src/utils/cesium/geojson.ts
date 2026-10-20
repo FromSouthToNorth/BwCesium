@@ -37,7 +37,7 @@ import { getLabelConfig, LABEL_PRESETS } from './labelConfig';
 
 import {
   useGroupCompanyLevelMine
-} from '@/components/GroupAndCompany/src/hooks/useGroupCompanyLevelMine';
+} from '@/hooks/useGroupCompanyLevelMine';
 
 // 使用辅助函数
 import { getViewer, safeCesiumOperation, clearEntityArray } from './helpers';

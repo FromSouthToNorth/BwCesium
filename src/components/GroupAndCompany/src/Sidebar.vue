@@ -35,8 +35,8 @@ import type { TableColumnsType, TablePaginationConfig } from 'ant-design-vue';
 import type { SorterResult } from 'ant-design-vue/es/table/interface';
 import { RightOutlined, LeftOutlined } from '@ant-design/icons-vue';
 import { groupCompanyLevelMine, commonItemsStat } from '@/utils/mqtt/publish';
-import { useGroupCompanyLevelMine } from './hooks/useGroupCompanyLevelMine';
-import type { CommonItemsStatData, StatGroup, StatRow } from './hooks/useGroupCompanyLevelMine';
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine';
+import type { CommonItemsStatData, StatGroup, StatRow } from '@/hooks/useGroupCompanyLevelMine';
 
 const { getCommonItemsStat } = useGroupCompanyLevelMine();
 const emit = defineEmits<{ openClick: [value: boolean] }>();

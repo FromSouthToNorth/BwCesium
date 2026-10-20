@@ -241,38 +241,3 @@ export const getWaterArea = createMineNamePublisher(8175)
  * @type {Function}
  */
 export const getTraverseBoundary = createMineNamePublisher(8184)
-
-/**
- * 添加全局参数
- * @param {string} name - 参数名称
- * @param {any} value - 参数值
- */
-export function addGlobalParam(name, value) {
-  globalParamMap.set(name, value)
-}
-
-/**
- * 移除全局参数
- * @param {string} name - 参数名称
- * @returns {boolean} 是否成功移除
- */
-export function removeGlobalParam(name) {
-  return globalParamMap.delete(name)
-}
-
-/**
- * 获取所有全局参数
- * @returns {Map} 全局参数映射表
- */
-export function getGlobalParams() {
-  return new Map(globalParamMap)
-}
-
-/**
- * 清空所有全局参数
- */
-export function clearGlobalParams() {
-  globalParamMap.clear()
-  // 重新添加默认的矿名参数
-  globalParamMap.set('MineName', getMineName())
-}

@@ -50,13 +50,7 @@ Ion.defaultAccessToken = MAP_CONFIG.ION_TOKEN;
 const mapTileKey = MAP_CONFIG.MAP_TILE_KEY;
 
 // Vue 响应式引用
-const viewerRef = ref<any>(null);
 const terrainRef = ref<any>(null);
-
-/**
- * 获取地形实例（计算属性）
- */
-export const getTerrain = computed(() => unref(terrainRef));
 
 /**
  * 地形加载完成回调
@@ -74,20 +68,18 @@ function handleTerrainReady() {
 /**
  * 初始化 Cesium Viewer
  * @param {HTMLElement} refEl - 容器元素
- * @returns {import('vue').Ref} viewer 的 Vue 引用
+ * @returns {Cesium.Viewer} viewer 实例(同时已写入 cesiumStore,可用 getViewer 获取)
  * @example
- * const viewerRef = initializeCesium(document.getElementById('cesiumContainer'));
+ * const viewer = initializeCesium(document.getElementById('cesiumContainer'));
  */
 export function initializeCesium(refEl) {
   // 创建 Viewer 实例
-  viewerRef.value = new Viewer(refEl, {
+  const viewer = new Viewer(refEl, {
     timeline: false,
     animation: false,
     shouldAnimate: true,
-    baseLayerPicker: true,
+    baseLayerPicker: true,
   });
-
-  const viewer = toRaw(unref(viewerRef));
 
   // 配置地图瓦片
   const tileProvider = new UrlTemplateImageryProvider({
@@ -122,7 +114,7 @@ export function initializeCesium(refEl) {
   leftClick();
   rightClick();
 
-  return viewerRef;
+  return viewer;
 }
 
 /**
@@ -374,14 +366,15 @@ export function flyTo(destination, complete?) {
  * @returns {void}
  */
 export function destroyCesium() {
-  const viewer = toRaw(unref(viewerRef));
+  const cesiumStore = useCesiumStore();
+  const viewer = toRaw(unref(cesiumStore.viewer));
   console.log('Destroying Cesium viewer: ', viewer);
 
   if (!viewer) return;
 
   // 防止重复销毁
   if (viewer.isDestroyed?.()) {
-    viewerRef.value = null;
+    cesiumStore.setViewer(null);
     return;
   }
 
@@ -390,7 +383,7 @@ export function destroyCesium() {
   } catch (e: any) {
     console.warn('Cesium destroy 过程出现异常:', e);
   } finally {
-    viewerRef.value = null;
+    cesiumStore.setViewer(null);
     console.log('Cesium Viewer destroyed');
   }
 }
@@ -416,20 +409,4 @@ export function getPolylineGeometricCenter(positions, heightOffset = GEOMETRY_CO
   }
 
   return center;
-}
-
-/**
- * 获取当前 viewer 实例
- * @returns {Cesium.Viewer | null} viewer 实例
- */
-export function getCurrentViewer() {
-  return toRaw(unref(viewerRef));
-}
-
-/**
- * 检查 viewer 是否已初始化
- * @returns {boolean} 是否已初始化
- */
-export function isViewerInitialized() {
-  return !!toRaw(unref(viewerRef));
 }

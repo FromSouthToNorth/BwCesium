@@ -1,8 +1,8 @@
-declare const L: any
 declare const store: any
 import { SceneTransforms, Matrix4 } from 'cesium'
 import { select as d3_select } from 'd3-selection';
 import { isArray } from './is'
+import { fun } from './menuOperations'
 
 let _menu = d3_select(null);
 
@@ -223,69 +223,12 @@ export function utilMenu(context) {
   return editMenu;
 }
 
-const MENUS = new Map([
-  ['showLRPoint', showLRPoint]
-]);
-
-/**
- *
- * @param {*} context
- */
-export function showLRPoint({ relatedTarget }) {
-  console.log('showLRPoint: ', relatedTarget);
-  // 处理可能为 undefined 的情况
-  const layer = relatedTarget?.layer;
-  if (!layer) return;
-
-  const options = layer.options ?? {};
-  const data = options.data ?? {};
-  const { rightPt, leftPt, lx, ly, lz, rx, ry, rz } = data;
-
-  const { LRMarkerFeatureGroup, map } = store.getters;
-
-  // 检查必要对象是否存在
-  if (!LRMarkerFeatureGroup || !map) return;
-
-  LRMarkerFeatureGroup.clearLayers();
-
-  // 创建 marker 的通用函数
-  function createMarker(position, className, tooltipText, popupContent) {
-    if (!position?.B || !position?.L) return null;
-
-    return L.marker([position.B, position.L], {
-      icon: L.divIcon({
-        iconSize: [8, 8],
-        className: `lr-marker-icon ${className}`,
-      }),
-    })
-      .bindPopup(popupContent)
-      .bindTooltip(tooltipText, { permanent: true });
-  }
-
-  const leftPopup = `<p>x: ${lx}</p><p>y: ${ly}</p><p>z: ${lz}</p>`;
-  const rightPopup = `<p>x: ${rx}</p><p>y: ${ry}</p><p>z: ${rz}</p>`;
-
-  const leftMarker = createMarker(leftPt, 'left-marker', '左', leftPopup);
-  const rightMarker = createMarker(rightPt, 'right-marker', '右', rightPopup);
-
-  if (leftMarker) LRMarkerFeatureGroup.addLayer(leftMarker);
-  if (rightMarker) LRMarkerFeatureGroup.addLayer(rightMarker);
-
-  // 确保有图层后再获取边界
-  if (!LRMarkerFeatureGroup.getLayers().length) return;
-
-  try {
-    map.fitBounds(LRMarkerFeatureGroup.getBounds().pad(1.8));
-  } catch (error: any) {
-    console.error('fitBounds error:', error);
-  }
-}
 
 export function getMenu(contextmenu) {
   return contextmenu.map(({ text: title, callback }) => {
     return {
       title,
-      operation: MENUS.get(callback)
+      operation: fun[callback]
     }
   });
 }

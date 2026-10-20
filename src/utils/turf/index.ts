@@ -16,7 +16,6 @@ import {
   multiPolygon,
 } from '@turf/turf'
 import { isArray, isObject } from '../is'
-import { fun } from '@/components/GroupAndCompany/src/fun'
 
 /**
  * 为 GeoJSON 对象设置 ID（如果源对象有 ID）
@@ -38,15 +37,6 @@ function setId(item, geo) {
  */
 export function turfUnion(poly1, poly2) {
   return union(featureCollection([poly1, poly2]));
-}
-
-/**
- * 分解 GeoJSON 对象为单个坐标点
- * @param {GeoJSON} geojson - 输入的 GeoJSON 对象
- * @returns {Feature<MultiPoint>} 坐标点的多点集合
- */
-export function turfExplode(geojson) {
-  return explode(geojson);
 }
 
 /**
@@ -74,15 +64,6 @@ export function turfConvex(geojson) {
  */
 export function turfCentroid(geojson) {
   return centroid(geojson).geometry.coordinates;
-}
-
-/**
- * 将边界框转换为多边形
- * @param {number[]} bbox - [minX, minY, maxX, maxY] 边界框坐标
- * @returns {Feature<Polygon>} 边界框多边形
- */
-export function turfBboxPolygon(bbox) {
-  return bboxPolygon(bbox);
 }
 
 /**
@@ -152,58 +133,6 @@ export function turfTransformScale(geojson, factor) {
 }
 
 /**
- * 为 GeoJSON 对象生成缓冲区（周围区域）
- * @param {GeoJSON} geojson - 输入的 GeoJSON 对象
- * @param {number} radius - 缓冲区半径（单位：千米）
- * @returns {Feature<Polygon>} 缓冲区多边形
- */
-export function turfBuffer(geojson, radius) {
-  return buffer(geojson, radius, { units: 'kilometers', steps: 16 })
-}
-
-/**
- * 判断两个点是否相等（支持多种坐标格式）
- * @param {number[]|Object} a - 第一个点 ([lng, lat] 或 {L, B} 或 {lng, lat} 等)
- * @param {number[]|Object} b - 第二个点
- * @param {number} [tolerance=1e-8] - 容差值（浮点数比较）
- * @returns {boolean} 是否相等
- */
-export function booleanEqual(a, b, tolerance = 1e-8) {
-  // 统一将各种格式转换为 [lng, lat] 数组
-  const toLngLat = (v) => {
-    if (isArray(v)) return [v[0], v[1]]
-    if (!v || !isObject(v)) return [NaN, NaN]
-    // 支持多种属性名：L/lng/lon/longitude, B/lat/latitude
-    return [v.L ?? v.lng ?? v.lon ?? v.longitude, v.B ?? v.lat ?? v.latitude]
-  }
-  const [lng1, lat1] = toLngLat(a)
-  const [lng2, lat2] = toLngLat(b)
-  // 比较经纬度是否在容差范围内
-  return Math.abs(lat1 - lat2) <= tolerance && Math.abs(lng1 - lng2) <= tolerance
-}
-
-/**
- * 确保多边形的每条环首尾相等（闭合）
- * @param {number[][][]} coordinates - 多边形坐标数组 [[ring1], [ring2], ...]
- * @returns {number[][][]} 闭合后的坐标数组
- */
-export function startEndEqual(coordinates) {
-  if (!isArray(coordinates)) return coordinates
-  // 对每条环检查闭合，未闭合的环在末尾追加首坐标
-  return coordinates.map((ring) => {
-    if (!isArray(ring)) return ring
-    if (ring.length === 0) return ring
-    const first = ring[0]
-    const last = ring[ring.length - 1]
-    // 如果首尾不相等，则闭合环
-    if (!booleanEqual(first, last)) {
-      return ring.concat([first])
-    }
-    return ring
-  })
-}
-
-/**
  * 创建 Polygon 或 MultiPolygon Feature
  * @param {Object} item - 源对象或坐标对象，应包含 coordinates 或 geometry.coordinates
  * @returns {Feature<Polygon|MultiPolygon>} 创建的多边形 Feature
@@ -267,14 +196,4 @@ export function turfFeatureCollection(items) {
  */
 export function turfBbox(items) {
   return bbox(items)
-}
-
-/**
- * 计算从第一个点到第二个点的方位角（地理方向）
- * @param {number[]|Object} point1 - 起点 [lng, lat] 或对象格式
- * @param {number[]|Object} point2 - 终点 [lng, lat] 或对象格式
- * @returns {number} 方位角（单位：度，0° 为正北，顺时针增大）
- */
-export function turfBearing(point1, point2) {
-  return bearing(turfPoint(point1), turfPoint(point2));
 }

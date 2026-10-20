@@ -36,7 +36,7 @@ import Info from './CesiumInfo.vue';
 import { Modal, OperateModal } from '@/components/Popup';
 import { isAlphabetic } from '@/utils/is';
 
-import { useGroupCompanyLevelMine } from './hooks/useGroupCompanyLevelMine';
+import { useGroupCompanyLevelMine } from '@/hooks/useGroupCompanyLevelMine';
 import { flyToBoundary, flyTo } from '@/utils/cesium';
 import { useSetting } from '@/hooks/setting/useSetting';
 import { utilMenu } from '@/utils/menu';

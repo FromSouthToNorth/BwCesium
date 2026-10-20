@@ -14,10 +14,10 @@ export const ICON_CONFIG = {
   BACKGROUND_PADDING: new Cartesian2(8, 6),
 };
 
-// 地图配置
+// 地图配置(token 经 .env 注入,默认值保留内网 Cesium Ion/Mapbox key)
 export const MAP_CONFIG = {
-  ION_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNGNkZmExNi1iNGFjLTRmMWQtYTk0YS1kZDA0YThjODg0YWEiLCJpZCI6MTIzMzI5LCJpYXQiOjE3NTI2NTYwMDV9.AGrRQMfnLy7_rqCkCqt0ESx3NX3ulhfOZLv-sDZB-vA',
-  MAP_TILE_KEY: 'pk.eyJ1IjoiY3VzX2JrMW02aTdwIiwiYSI6IjRocW0wc2Q2ZTU4YmQ0OGE0YzAxZ3JpMXkiLCJ0Ijo0fQ.Q7HSLvVSwAvopYRcvaViOyeiV42zf9Lheydl_L2edWs',
+  ION_TOKEN: import.meta.env.VITE_CESIUM_ION_TOKEN,
+  MAP_TILE_KEY: import.meta.env.VITE_MAP_TILE_KEY,
 };
 
 // 聚类配置
@@ -46,21 +46,6 @@ export const GEOMETRY_CONFIG = {
   CIRCLE_SEGMENTS: 360, // 圆的分段数
 };
 
-// 标签配置（与 labelConfig.js 配合使用）
-export const LABEL_CONFIG = {
-  DEFAULT_FONT: '12px sans-serif',
-  DEFAULT_COLOR: CesiumColor.WHITE,
-  DEFAULT_OUTLINE_COLOR: CesiumColor.DIMGRAY,
-  DEFAULT_OUTLINE_WIDTH: 2,
-};
-
-// 线样式配置
-export const LINE_CONFIG = {
-  DEFAULT_WIDTH: 12,
-  DEFAULT_COLOR: '#ffffff',
-  ARROW_MATERIAL: true,
-};
-
 // 模型配置
 export const MODEL_CONFIG = {
   DEFAULT_SCALE: 1.0,
@@ -84,16 +69,3 @@ export const WATER_AREA_CONFIG = {
   DEFAULT_ALPHA: 0.5,
 };
 
-// 错误处理配置
-export const ERROR_CONFIG = {
-  MAX_RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000, // 毫秒
-  SHOW_USER_ERRORS: true,
-};
-
-// 性能配置
-export const PERFORMANCE_CONFIG = {
-  ENTITY_VISIBILITY_CHECK_INTERVAL: 100, // 毫秒
-  MAX_ENTITIES_PER_FRAME: 1000,
-  ENABLE_FRUSTUM_CULLING: true,
-};

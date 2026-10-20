@@ -1,3 +1,7 @@
+// 内网服务地址(开发代理统一指向)
+const API_TARGET = 'http://192.168.133.110:33382'
+const TILE_TARGET = 'http://192.168.133.57:33394'
+
 import { defineApplicationConfig } from './vite-config/application'
 
 export default defineApplicationConfig({
@@ -5,47 +9,47 @@ export default defineApplicationConfig({
     server: {
       proxy: {
         '/BW3DTileset': {
-          target: 'http://192.168.133.57:33394/',
+          target: TILE_TARGET,
           rewrite: (path: string) => path.replace(/^\/BW3DTileset/, ''),
         },
         '/net': {
-          target: 'http://192.168.133.110:33382/',
+          target: API_TARGET,
           changeOrigin: true,
         },
         '/gis': {
-          target: 'http://192.168.133.110:33382',
+          target: API_TARGET,
         },
         '/bwmes-boot/': {
-          target: 'http://192.168.133.110:33382/',
+          target: API_TARGET,
           changeOrigin: true,
         },
         '/BwMap': {
-          target: 'http://192.168.133.110:33382/',
+          target: API_TARGET,
           // rewrite: (path: string) => path.replace(/^\/BwMap/, ''),
         },
         '/bwmes': {
-          target: 'http://192.168.133.110:33382/',
+          target: API_TARGET,
         },
         '/Home': {
-          target: 'http://192.168.133.110:33382/',
+          target: API_TARGET,
         },
         '/bwportal': {
-          target: 'http://192.168.133.110:33382',
+          target: API_TARGET,
         },
         '/bwoffice': {
-          target: 'http://192.168.133.110:33382',
+          target: API_TARGET,
         },
         '/BwCesium/mqtt': {
-          target: 'ws://192.168.133.110:33382',
+          target: API_TARGET.replace('http', 'ws'),
           ws: true,
           rewrite: (path: string) => path.replace(/^\/BwCesium\/mqtt/, '/mqtt'),
         },
         '/cas/': {
-          target: 'http://192.168.133.110:33382',
+          target: API_TARGET,
           ws: true,
         },
         '/BwDeviceManage': {
-          target: 'http://192.168.133.110:33382',
+          target: API_TARGET,
           ws: true,
         },
       },

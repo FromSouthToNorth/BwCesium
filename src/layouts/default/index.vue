@@ -1,13 +1,18 @@
 <script lang="ts" setup>
 import { Layout } from 'ant-design-vue'
-import LayoutContent from './content/index.vue'
+import { useSetting } from '@/hooks/setting/useSetting'
 
+defineOptions({ name: 'DefaultLayout' })
+
+const { getPageLoading } = useSetting()
 </script>
 
 <template>
-  <Layout>
-    <Layout :class="`bw-main`">
-      <LayoutContent />
-    </Layout>
+  <Layout :class="`bw-main`" v-loading="getPageLoading">
+    <RouterView>
+      <template #default="{ Component, route }">
+        <component :is="Component" :key="route.fullPath" />
+      </template>
+    </RouterView>
   </Layout>
 </template>

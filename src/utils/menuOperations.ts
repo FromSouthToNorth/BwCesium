@@ -1,3 +1,4 @@
+// 矿井右键菜单操作函数集合(由 MQTT 下发的 operation 名索引到具体函数)
 /**
  * 矿井右键菜单操作函数集合
  * 菜单项通过 operation 字段名索引到此表,由 setContextmenuItems 挂载
