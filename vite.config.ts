@@ -30,6 +30,10 @@ export default defineApplicationConfig({
         '/bwmes': {
           target: API_TARGET,
         },
+        '/bwmodel': {
+          target: API_TARGET,
+          changeOrigin: true,
+        },
         '/Home': {
           target: API_TARGET,
         },
