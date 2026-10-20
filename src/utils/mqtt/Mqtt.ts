@@ -61,8 +61,6 @@ class Mqtt {
    * @type {Object}
    * @private
    */
-  [key: string]: any
-
   messageStats = {
     sent: 0,
     received: 0,
@@ -235,7 +233,7 @@ class Mqtt {
       this.logMessage('收到 MQTT 消息', {
         topic,
         messageId: parsedMessage.id || 'unknown',
-        generalFunc: parsedMessage.generalFunc
+        generalFunc: parsedMessage.generalFunc,
       })
 
       // 调用策略处理函数
@@ -285,23 +283,18 @@ class Mqtt {
     })
 
     // 使用 QoS 1 确保消息可靠性
-    this.client.publish(
-      topic,
-      JSON.stringify(message),
-      { qos: qos },
-      (err) => {
-        if (err) {
-          this.messageStats.errors++
-          this.handleError('消息发布失败', err)
-        } else {
-          this.logMessage('消息发布成功', {
-            topic,
-            messageId: message.id,
-          })
-        }
-        if (callback) callback(err)
+    this.client.publish(topic, JSON.stringify(message), { qos: qos }, (err) => {
+      if (err) {
+        this.messageStats.errors++
+        this.handleError('消息发布失败', err)
+      } else {
+        this.logMessage('消息发布成功', {
+          topic,
+          messageId: message.id,
+        })
       }
-    )
+      if (callback) callback(err)
+    })
     return this
   }
 

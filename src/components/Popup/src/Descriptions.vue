@@ -5,15 +5,15 @@ import { Descriptions } from 'ant-design-vue'
 defineProps({
   columns: {
     type: Array as any,
-    default: () => []
+    default: () => [],
   },
-  data: { type: Object as any, default: () => ({}) }
+  data: { type: Object as any, default: () => ({}) },
 })
 </script>
 
 <template>
   <Descriptions bordered size="small">
-    <Descriptions.Item v-for="({ dataIndex, title }) in columns" :label="title">
+    <Descriptions.Item v-for="{ dataIndex, title } in columns" :key="dataIndex" :label="title">
       {{ data[dataIndex] }}
     </Descriptions.Item>
   </Descriptions>
