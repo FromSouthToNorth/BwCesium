@@ -295,7 +295,7 @@ export function loadMineTunnelModel(mine, is) {
     }).then(model => {
       addModel('hdModel', model);
       model.readyEvent.addEventListener(() => {
-        model.mine = mine;
+        (model as any).mine = mine;
         console.log('---巷道模型加载成功---');
         setModel('hdModel');
       });
@@ -303,7 +303,7 @@ export function loadMineTunnelModel(mine, is) {
       console.error('Failed to load hdModel:', error);
       andMessage.error(`加载巷道模型失败: ${error.message}`);
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in loadMineTunnelModel:', error);
   }
 }

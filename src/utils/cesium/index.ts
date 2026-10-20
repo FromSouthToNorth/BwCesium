@@ -50,8 +50,8 @@ Ion.defaultAccessToken = MAP_CONFIG.ION_TOKEN;
 const mapTileKey = MAP_CONFIG.MAP_TILE_KEY;
 
 // Vue 响应式引用
-const viewerRef = ref(null);
-const terrainRef = ref(null);
+const viewerRef = ref<any>(null);
+const terrainRef = ref<any>(null);
 
 /**
  * 获取地形实例（计算属性）
@@ -84,8 +84,7 @@ export function initializeCesium(refEl) {
     timeline: false,
     animation: false,
     shouldAnimate: true,
-    baseLayerPicker: true,
-    imageryProvider: true,
+    baseLayerPicker: true,
   });
 
   const viewer = toRaw(unref(viewerRef));
@@ -111,7 +110,7 @@ export function initializeCesium(refEl) {
 
   // 添加图层和导航
   viewer.imageryLayers.add(new ImageryLayer(tileProvider));
-  new CesiumNavigation(viewer);
+  new (CesiumNavigation as any)(viewer);
 
   // 存储到 store
   const cesiumStore = useCesiumStore();
@@ -139,7 +138,8 @@ export function initializeCesium(refEl) {
  * flyToBoundary({ boundary: [[lng1, lat1], [lng2, lat2]] });
  * flyToBoundary({ L: 116.397, B: 39.908 });
  */
-export function flyToBoundary({ boundary, L, B, pad, orientation }, complete) {
+export function flyToBoundary(options: any, complete?) {
+  let { boundary, L, B, pad, orientation } = options
   return safeCesiumOperation((viewer) => {
     let destination;
 
@@ -240,14 +240,13 @@ export function getEntityPosition(entity, viewer) {
  * const geojson = entitiesToGeoJSON(entities);
  */
 export function entitiesToGeoJSON(entities, includeProperties = true) {
-  const features = [];
-
+  const features: any[] = [];
   // 统一处理为数组
   const entityArray = isArray(entities) ? entities : entities.values;
   const now = JulianDate.now();
 
   entityArray.forEach((entity) => {
-    const feature = {
+    const feature: any = {
       type: 'Feature',
       geometry: null,
       properties: includeProperties ? {} : null,
@@ -359,7 +358,7 @@ export function entitiesToGeoJSON(entities, includeProperties = true) {
  * flyTo(rectangle);
  * flyTo(cartesian3);
  */
-export function flyTo(destination, complete) {
+export function flyTo(destination, complete?) {
   return safeCesiumOperation((viewer) => {
     viewer.camera.flyTo({
       destination,
@@ -388,7 +387,7 @@ export function destroyCesium() {
 
   try {
     viewer.isDestroyed() || viewer.destroy();
-  } catch (e) {
+  } catch (e: any) {
     console.warn('Cesium destroy 过程出现异常:', e);
   } finally {
     viewerRef.value = null;

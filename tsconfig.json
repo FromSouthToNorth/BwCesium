@@ -1,0 +1,29 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": [
+    "env.d.ts",
+    "src/**/*",
+    "src/**/*.vue",
+    "types/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "#/*": [
+        "types/*"
+      ]
+    },
+    "noEmit": true,
+    "allowJs": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false
+  }
+}

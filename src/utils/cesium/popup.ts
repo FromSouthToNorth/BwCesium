@@ -1,6 +1,9 @@
 import { SceneTransforms } from 'cesium'
 
 class CesiumPopup {
+  // 动态挂载的实例属性
+  [key: string]: any
+
   constructor(options) {
     this.viewer = options.viewer;
     this.position = options.position;           // Cartesian3 世界坐标

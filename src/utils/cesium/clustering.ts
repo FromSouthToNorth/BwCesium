@@ -144,7 +144,7 @@ export function clusteringZoom(dataSource) {
 
     // 飞行到目标区域
     flyTo(destination);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in clusteringZoom:', error);
   }
 }

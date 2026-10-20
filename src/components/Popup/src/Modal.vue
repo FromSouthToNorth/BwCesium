@@ -24,14 +24,14 @@
   </BaseDraggableModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Descriptions from './Descriptions.vue';
 import Menu from './Menu.vue';
 import ModelSlider from './ModelSlider.vue';
 import BaseDraggableModal from './BaseDraggableModal.vue';
 
 const props = defineProps({
-  modalContent: Object,
+  modalContent: { type: Object as any, default: () => ({}) },
   showModal: {
     type: Boolean,
     default: false,

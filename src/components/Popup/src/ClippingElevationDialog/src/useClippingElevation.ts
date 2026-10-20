@@ -18,7 +18,7 @@ export function useClippingElevation() {
   const heightOffset = ref(50)
   const previewEnabled = ref(false)
   const loading = ref(false)
-  const elevationInfo = ref(null)
+  const elevationInfo = ref<any>(null)
 
   // 计算属性
   const clippingInfo = computed(() => {
@@ -83,7 +83,7 @@ export function useClippingElevation() {
       loading.value = true
       // 预览逻辑占位符
       message.info(`预览：${heightOffset.value > 0 ? '抬升' : '下降'} ${Math.abs(heightOffset.value)}米`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('预览失败:', error)
       message.error('预览失败: ' + error.message)
     } finally {
@@ -100,7 +100,7 @@ export function useClippingElevation() {
 
     try {
       loading.value = true
-      const results = await adjustClippingAreaElevation(heightOffset.value)
+      const results: any = await adjustClippingAreaElevation(heightOffset.value)
 
       if (results.success > 0) {
         message.success(`成功调整 ${results.success} 个实体的高度`)
@@ -114,7 +114,7 @@ export function useClippingElevation() {
 
       updateElevationInfo()
       return results
-    } catch (error) {
+    } catch (error: any) {
       console.error('高度调整失败:', error)
       message.error('高度调整失败: ' + error.message)
       throw error
@@ -128,7 +128,7 @@ export function useClippingElevation() {
 
     try {
       loading.value = true
-      const results = await restoreClippingAreaElevation()
+      const results: any = await restoreClippingAreaElevation()
 
       if (results.restored > 0) {
         message.success(`成功恢复 ${results.restored} 个实体的高度`)
@@ -142,7 +142,7 @@ export function useClippingElevation() {
 
       updateElevationInfo()
       return results
-    } catch (error) {
+    } catch (error: any) {
       console.error('高度恢复失败:', error)
       message.error('高度恢复失败: ' + error.message)
       throw error
@@ -168,15 +168,14 @@ export function useClippingElevation() {
   function updateElevationInfo() {
     try {
       elevationInfo.value = getClippingElevationInfo()
-    } catch (error) {
+    } catch (error: any) {
       console.error('更新裁切区域信息失败:', error)
       elevationInfo.value = null
     }
   }
 
   // 监听裁切区域变化
-  let updateInterval = null
-
+  let updateInterval: any = null
   function startInfoUpdate() {
     updateInterval = setInterval(() => {
       updateElevationInfo()

@@ -54,13 +54,13 @@ function createPickedFeatureDescription(pickedFeature) {
     }
 
     return `<table class="cesium-infoBox-defaultTable">${rows.join('')}</table>`;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating feature description:', error);
     return undefined;
   }
 }
 
-const activeEntityRef = ref(null);
+const activeEntityRef = ref<any>(null);
 
 export const getActiveEntity = computed(() => unref(activeEntityRef));
 
@@ -94,7 +94,7 @@ function getPos(entity, pickPosition) {
 
     // 最后返回拾取位置
     return pickPosition;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting entity position:', error);
     return pickPosition;
   }
@@ -129,7 +129,7 @@ function isPositionInFrustum(position, scene) {
     const visibility = cullingVolume.computeVisibility(boundingSphere);
 
     return visibility !== Intersect.OUTSIDE;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error checking position in frustum:', error);
     return false;
   }
@@ -260,7 +260,7 @@ export function leftClick() {
       if (entityInfo) {
         activeEntityRef.value = entityInfo;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in left click handler:', error);
       activeEntityRef.value = null;
     }
@@ -318,16 +318,16 @@ export function rightClick() {
         console.log('Right clicked on primitive:', pickedObject.primitive);
         // 可以在这里添加其他图元类型的处理逻辑
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in right click handler:', error);
       activeEntityRef.value = null;
     }
   }, ScreenSpaceEventType.RIGHT_CLICK);
 }
 
-const lastCamera = ref(null);
+const lastCamera = ref<any>(null);
 let heightStatus = false;
-let postUpdateListener = null;
+let postUpdateListener: any = null;
 
 /**
  * 清理事件监听器
@@ -343,7 +343,7 @@ function cleanupEventListeners() {
  * 查询当前视野内的实体（优化版）
  * 使用 lodash-es 的防抖函数进行性能优化
  */
-export function queryEntitiesInView(callback) {
+export function queryEntitiesInView(callback?) {
   try {
     const _viewer = getViewer();
     if (!_viewer) return;
@@ -358,10 +358,10 @@ export function queryEntitiesInView(callback) {
         const currentTime = _viewer.clock.currentTime;
 
         // 相机几乎没动就跳过（性能优化关键）
-        if (Matrix4.equalsEpsilon(scene.camera.viewMatrix, lastCamera, CesiumMath.EPSILON4)) {
+        if (Matrix4.equalsEpsilon(scene.camera.viewMatrix, (lastCamera as any), CesiumMath.EPSILON4)) {
           return;
         }
-        Matrix4.clone(scene.camera.viewMatrix, lastCamera);
+        Matrix4.clone(scene.camera.viewMatrix, lastCamera as any);
 
         // 执行回调
         callback && callback();
@@ -413,7 +413,7 @@ export function queryEntitiesInView(callback) {
         if (process.env.NODE_ENV === 'development') {
           console.debug(`Visible entities: ${visibleCount}/${entities.length}, Height: ${height.toFixed(0)}m`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error in debounced query:', error);
       }
     }, DEBOUNCE_DELAY, {
@@ -431,7 +431,7 @@ export function queryEntitiesInView(callback) {
       debouncedCallback.cancel && debouncedCallback.cancel();
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error setting up queryEntitiesInView:', error);
   }
 }

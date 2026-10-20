@@ -26,10 +26,10 @@ import { WATER_AREA_CONFIG } from './constants';
 const { getWaterAreaGeoJSON } = useGroupCompanyLevelMine();
 
 // 水域图元存储
-const waterPrimitives = [];
+const waterPrimitives: any[] = [];
 
 // 水域标签实体存储
-const waterLabelEntities = [];
+const waterLabelEntities: any[] = [];
 
 // 停止监听器映射
 const stopMap = new Map();
@@ -160,14 +160,14 @@ function createWaterPrimitive(entity) {
   });
 
   // 添加自定义属性
-  waterPrimitive.properties = properties;
+  (waterPrimitive as any).properties = properties;
 
   // 计算中心点
   const center = turfCentroid(turfPolygon({ coordinates: [positions] }));
 
   const centerPosition = Cartesian3.fromDegrees(center[0], center[1], height);
 
-  waterPrimitive.center = centerPosition;
+  (waterPrimitive as any).center = centerPosition;
 
   // 添加到场景
   viewer.scene.primitives.add(waterPrimitive);

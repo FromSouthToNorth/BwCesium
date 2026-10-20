@@ -1,3 +1,5 @@
+declare const Cesium: any
+
 import { unref, toRaw, watch } from 'vue';
 import {
   GeoJsonDataSource,
@@ -48,7 +50,7 @@ const {
 // 用 Map 管理每个 key 的 stop handle
 const watchStops = new Map();
 const labelMap = new Map();
-const verticalShafts = [];
+const verticalShafts: any[] = [];
 
 /**
  * 清除指定名称的数据源和相关实体
@@ -95,7 +97,7 @@ function clearDataSource(name) {
  * };
  * geoJSONPointLoad(geojson, '设备点', { isSetupClustering: true });
  */
-export function geoJSONPointLoad(geojson, name, options = {}, callback) {
+export function geoJSONPointLoad(geojson, name, options: any = {}, callback: any = null) {
   safeCesiumOperation((viewer) => {
     GeoJsonDataSource.load(geojson, options)
       .then((data) => {
@@ -128,7 +130,7 @@ export function geoJSONPointLoad(geojson, name, options = {}, callback) {
 }
 
 function computeCircle(radius) {
-  const positions = [];
+  const positions: any[] = [];
   for (let i = 0; i < 360; i++) {
     const radians = CesiumMath.toRadians(i);
     positions.push(
@@ -160,7 +162,7 @@ function computeCircle(radius) {
  *   if (!err) console.log('隧道线加载成功');
  * });
  */
-export function geoJSONLineStringLoad(geojson, name, options = {}, callback) {
+export function geoJSONLineStringLoad(geojson, name, options: any = {}, callback: any = null) {
   // 验证必要参数
   if (!geojson || !name) {
     const error = new Error('geoJSONLineStringLoad: geojson and name are required');
@@ -260,7 +262,7 @@ function processLineEntity(line, name, viewer) {
       // 普通隧道：创建多边形体积
       createTunnelVolume(line, positions, _color);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing line entity:', line, error);
   }
 }

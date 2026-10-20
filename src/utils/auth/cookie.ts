@@ -1,3 +1,5 @@
+// @ts-nocheck
+// 内嵌的第三方 cookie 库(UMD 格式,挂载 window.cookies),不参与类型检查
 (function (global, factory) {
     typeof exports === "object" && typeof module !== "undefined"
         ? module.exports = factory(global)
@@ -76,7 +78,7 @@
                             } else {
                                 localStorage.removeItem(_temp)
                             }
-                        } catch (e) {
+                        } catch (e: any) {
                             console.error(e)
                         }
                     }
@@ -85,7 +87,7 @@
                 var real;
                 try {
                     real = JSON.parse(value)
-                } catch (e) {
+                } catch (e: any) {
                     real = value
                 }
                 if (typeof real === "undefined" && opt.fallback) real = opt.fallback(data, opt);
@@ -112,12 +114,12 @@
             return cookies(key)
         }
         cookies.set = function (key, value, attributes) {
-            var _temp = {};
+            var _temp: any = {};
             _temp[key] = value;
             cookies(_temp, attributes)
         }
         cookies.remove = function (key) {
-            var _temp = {};
+            var _temp: any = {};
             _temp[key] = '';
             cookies(_temp, { expires: -(1 * 24 * 3600) })
         }

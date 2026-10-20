@@ -49,7 +49,7 @@ export function adjustClippingAreaElevation(offset) {
       // 批量调整高度
       const results = batchAdjustHeight(entities, offset);
       resolve(results);
-    } catch (error) {
+    } catch (error: any) {
       reject(error);
     }
   });
@@ -83,7 +83,7 @@ export function restoreClippingAreaElevation() {
       // 批量恢复高度
       const results = batchRestoreHeight(entities);
       resolve(results);
-    } catch (error) {
+    } catch (error: any) {
       reject(error);
     }
   });
@@ -131,7 +131,7 @@ export function getClippingElevationInfo() {
       canAdjust: entityStats.total > 0,
       canRestore: heightStats.savedHeightsCount > 0
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting clipping elevation info:', error);
     return {
       hasClipping: false,

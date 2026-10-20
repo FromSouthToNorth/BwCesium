@@ -10,7 +10,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, shallowRef, onMounted, onUnmounted, nextTick } from 'vue'
 import * as Cesium from 'cesium'
 
@@ -25,22 +25,22 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const visible = ref(false)
-const popupRef = ref(null)
+const popupRef = ref<any>(null)
 const screenPos = ref({ x: 0, y: 0, visible: false })
 
-let removePreUpdate = null
-let removeChanged = null
+let removePreUpdate: any = null
+let removeChanged: any = null
 
 const computeScreenPosition = () => {
   if (!props.viewer?.scene || !props.position) return
 
   const scene = props.viewer.scene
-  const position = Cesium.Cartesian3.isCartesian3(props.position)
+  const position: any = (Cesium.Cartesian3 as any).isCartesian3(props.position)
     ? props.position
-    : new Cesium.Cartesian3(props.position.x, props.position.y, props.position.z)
+    : new Cesium.Cartesian3((props.position as any).x, (props.position as any).y, (props.position as any).z)
 
   // 关键：使用 worldToWindowCoordinates X/Y/Z 完整投影）
-  const windowPos = Cesium.SceneTransforms.worldToWindowCoordinates(scene, position)
+  const windowPos: any = Cesium.SceneTransforms.worldToWindowCoordinates(scene, position)
 
   if (!Cesium.defined(windowPos)) {
     screenPos.value = { x: 0, y: 0, visible: false }

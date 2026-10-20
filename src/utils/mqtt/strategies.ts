@@ -12,7 +12,7 @@ import {
   getTypeCategory,
   isValidMessageType,
   getTypeDescriptions,
-} from './types.js'
+} from './types'
 import { stringEndNumber } from '@/utils/stringEndNumber'
 import { useGroupCompanyLevelMine } from '@/components/GroupAndCompany/src/hooks/useGroupCompanyLevelMine'
 import { offsetMinePoint } from '@/utils/rbush'
@@ -20,9 +20,9 @@ import { notification, Modal, message } from 'ant-design-vue'
 import { h } from 'vue'
 
 import { useSetting } from "@/hooks/setting/useSetting"
-import { messageStateCode } from './settings.js'
+import { messageStateCode } from './settings'
 import { isChinese } from '../is'
-import { verifyResponseData, extractStrategyId } from './common.js'
+import { verifyResponseData, extractStrategyId } from './common'
 
 const { setPageLoading } = useSetting()
 
@@ -176,7 +176,7 @@ function handlePromptMessage(result) {
     notification.error({
       description: mesg,
       duration: 6,
-    })
+    } as any)
     return
   }
 
@@ -196,7 +196,7 @@ function handlePromptMessage(result) {
   let urlInfo
   try {
     urlInfo = JSON.parse(bwurl)
-  } catch (error) {
+  } catch (error: any) {
     console.error('链接信息解析失败:', error)
     return
   }
@@ -340,7 +340,7 @@ export function processMqttMessage(type, result) {
 
     handler(result)
     return true
-  } catch (error) {
+  } catch (error: any) {
     console.error(`消息处理失败: ${type}`, {
       error: error.message,
       stack: error.stack,

@@ -1,9 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { Button } from 'ant-design-vue';
 import { DataSource } from 'cesium';
 defineProps({
   menuData: {
-    type: Array,
+    type: Array as any,
     default: () => []
   },
   sourceTarget: Object

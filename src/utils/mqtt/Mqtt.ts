@@ -1,7 +1,7 @@
 import mqtt from 'mqtt'
-import { SUBSCRIBE, PUBLISH } from './settings.js'
+import { SUBSCRIBE, PUBLISH } from './settings'
 import { getToken, getMineDesc } from '@/utils/auth'
-import { mqttFun } from './strategies.js'
+import { mqttFun } from './strategies'
 import { v4 as uuidv4 } from 'uuid'
 import { message as antMessage, Modal } from 'ant-design-vue'
 import {
@@ -11,7 +11,7 @@ import {
   parseMessage,
   buildClientOptions,
   buildBrokerUrl,
-} from './common.js'
+} from './common'
 
 /**
  * MQTT 客户端类
@@ -61,6 +61,8 @@ class Mqtt {
    * @type {Object}
    * @private
    */
+  [key: string]: any
+
   messageStats = {
     sent: 0,
     received: 0,
@@ -72,14 +74,14 @@ class Mqtt {
    * @type {Date|null}
    * @private
    */
-  connectionTime = null
+  connectionTime: any = null
 
   /**
    * 自动订阅主题列表
    * @type {string[]}
    * @private
    */
-  autoSubscribedTopics = []
+  autoSubscribedTopics: any[] = []
 
   /**
    * 连接状态
@@ -93,14 +95,14 @@ class Mqtt {
    * @type {number|null}
    * @private
    */
-  _keepAliveTimer = null
+  _keepAliveTimer: any = null
 
   /**
    * 创建 MQTT 客户端实例
    * @param {boolean} isDebug - 是否启用调试模式
    * @param {string} [caller] - 调用者标识，默认为环境变量 VITE_PRODUCT_CODE
    */
-  constructor(isDebug, caller) {
+  constructor(isDebug, caller: any = null) {
     this.isDebug = isDebug
     this.caller = caller || import.meta.env.VITE_PRODUCT_CODE
 
@@ -133,7 +135,7 @@ class Mqtt {
       this.setupEventListeners()
 
       this.logMessage('MQTT 客户端初始化完成', { clientId: this.clientId })
-    } catch (error) {
+    } catch (error: any) {
       this.handleError('MQTT 连接初始化失败', error)
       throw error
     }
@@ -250,7 +252,7 @@ class Mqtt {
 
       // 调用策略处理函数
       mqttFun(parsedMessage.generalFunc, parsedMessage)
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(`${topic}: 消息处理失败`, error)
     }
   }
@@ -262,13 +264,24 @@ class Mqtt {
    * @param {number} [qos=1] - QoS 级别（0=最多一次，1=至少一次，2=恰好一次）
    * @returns {Mqtt} 当前实例（支持链式调用）
    */
-  publish(message, callback, qos = 1) {
+  async publish(message, callback?: any, qos = 1) {
     // 检查连接状态
-    if (!this.isConnected()) {
-      const errorMsg = '无法发布消息：MQTT 未连接'
-      // this.handleError(errorMsg, new Error(errorMsg))
+    if (!this.client) {
+      const errorMsg = '无法发布消息：MQTT 客户端未初始化'
       if (callback) callback(new Error(errorMsg))
       return this
+    }
+
+    // 连接尚未建立时等待连接（组件挂载可能早于 CONNACK，直接丢弃会导致请求丢失）
+    if (!this.isConnected()) {
+      this.logMessage('MQTT 未连接，等待连接后发布', { code: message.code })
+      const connected = await this.waitForConnection()
+      if (!connected) {
+        const errorMsg = '无法发布消息：等待 MQTT 连接超时'
+        this.handleError(errorMsg, new Error(errorMsg))
+        if (callback) callback(new Error(errorMsg))
+        return this
+      }
     }
 
     const mineDesc = getMineDesc()
@@ -302,6 +315,29 @@ class Mqtt {
       }
     )
     return this
+  }
+
+  /**
+   * 等待 MQTT 连接建立
+   * @param {number} [timeout=15000] - 超时时间（毫秒）
+   * @returns {Promise<boolean>} 连接是否成功建立
+   */
+  waitForConnection(timeout = 15000) {
+    if (this.isConnected()) return Promise.resolve(true)
+    if (!this.client) return Promise.resolve(false)
+    return new Promise((resolve) => {
+      const client = this.client
+      const timer = setTimeout(() => {
+        client.off('connect', onConnect)
+        resolve(false)
+      }, timeout)
+      const onConnect = () => {
+        clearTimeout(timer)
+        client.off('connect', onConnect)
+        resolve(true)
+      }
+      client.on('connect', onConnect)
+    })
   }
 
   /**
@@ -401,7 +437,7 @@ class Mqtt {
    * @param {boolean} [force=false] - 是否强制断开
    * @param {Function} [callback] - 断开连接后的回调函数
    */
-  disconnect(force = false, callback) {
+  disconnect(force = false, callback?: any) {
     this.client.end(force, callback)
     this.logMessage('MQTT 连接已断开')
   }
@@ -420,7 +456,7 @@ class Mqtt {
    */
   getConnectionDuration() {
     if (!this.connectionTime) return 0
-    return Math.floor((new Date() - this.connectionTime) / 1000)
+    return Math.floor((Date.now() - (this.connectionTime?.getTime?.() ?? Date.now())) / 1000)
   }
 
   /**
@@ -456,7 +492,7 @@ class Mqtt {
 
       // 兜底：如果内部接口不可用，记录日志但不抛错
       this.logMessage('心跳不可用：client 不支持 ping 或 _sendPacket')
-    } catch (err) {
+    } catch (err: any) {
       this.logMessage('心跳发送异常', { error: err && err.message })
     }
   }
@@ -492,28 +528,6 @@ class Mqtt {
       clearInterval(this._keepAliveTimer)
       this._keepAliveTimer = null
       this.logMessage('停止自动心跳')
-    }
-  }
-
-  /**
-   * 获取 MQTT 状态信息
-   * @returns {Object} 包含连接状态、消息统计等信息
-   */
-  getStatusInfo() {
-    const isConnected = this.isConnected()
-    const duration = this.getConnectionDuration()
-
-    return {
-      isConnected,
-      clientId: this.clientId,
-      connectionTime: this.connectionTime ? this.connectionTime.toLocaleString() : '未连接',
-      connectionDuration: `${duration}秒`,
-      messageStats: {
-        sent: this.messageStats.sent,
-        received: this.messageStats.received,
-        errors: this.messageStats.errors,
-      },
-      total: this.messageStats.sent + this.messageStats.received,
     }
   }
 

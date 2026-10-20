@@ -22,7 +22,7 @@ import { CYLINDER_CONFIG } from './constants';
 const { getGroundHoleGeoJSON } = useGroupCompanyLevelMine();
 
 // 钻孔实体存储
-const groundHoleEntities = [];
+const groundHoleEntities: any[] = [];
 
 // 停止监听器映射
 const stopMap = new Map();

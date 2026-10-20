@@ -1,5 +1,6 @@
-import svgLoader from 'vite-svg-loader'; // 导入
+import svgLoader from 'vite-svg-loader'
+import type { PluginOption } from 'vite'
 
-export function configSvgPlugin() {
+export function configSvgPlugin(): PluginOption {
   return svgLoader()
 }

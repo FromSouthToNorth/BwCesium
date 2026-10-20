@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Spin } from 'ant-design-vue'
 
 defineOptions({ name: 'Loading' })
@@ -11,7 +11,7 @@ defineProps({
   size: {
     type: String,
     default: 'large',
-    validator: (v) => {
+    validator: (v: any) => {
       return ['default', 'small', 'large'].includes(v)
     },
   },
@@ -28,6 +28,7 @@ defineProps({
   },
   theme: {
     type: String,
+    default: '',
   },
 })
 </script>
@@ -35,7 +36,7 @@ defineProps({
 <template>
   <section v-show="loading" class="full-loading" :class="{ absolute, [`${theme}`]: !!theme }"
     :style="[background ? `background-color: ${background}` : '']">
-    <Spin v-bind="$attrs" :tip="tip" :size="size" :spinning="loading" />
+    <Spin v-bind="$attrs" :tip="tip" :size="(size as any)" :spinning="loading" />
   </section>
 </template>
 

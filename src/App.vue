@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ConfigProvider } from 'ant-design-vue/lib'
 import { AppProvider } from '@/components/Application'
 </script>

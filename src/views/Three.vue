@@ -1,14 +1,14 @@
 <template>
   <div id="output" ref="output"></div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { onMounted, unref, ref } from 'vue';
 import { WebGLRenderer, Scene, PerspectiveCamera, PointsMaterial, Points } from 'three'
 import { CENTER } from 'three-mesh-bvh'
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 import { fun } from '@/components/GroupAndCompany/src/fun';
 
-const output = ref(null);
+const output = ref<any>(null);
 
 onMounted(() => {
   init();

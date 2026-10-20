@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, toRaw, watch, unref, onMounted } from 'vue';
 import { Checkbox, Tree } from 'ant-design-vue';
 import {
@@ -12,9 +12,9 @@ import {
 import { forEach } from 'lodash-es';
 
 const props = defineProps({
-  mine: Object,
+  mine: { type: Object as any, default: () => ({}) },
   initialCheckedKeys: {
-    type: Array,
+    type: Array as any,
     default: () => []
   }
 });
@@ -27,13 +27,13 @@ const tunnelModel = ref(false);
 const safe = ref(false);
 const hole = ref(false);
 const water = ref(false);
-const mineInfo = ref(null);
+const mineInfo = ref<any>(null);
 const checkedKeys = ref(props.initialCheckedKeys || [])
 
 let mineName = '';
 
-watch(() => unref(props.mine), (val) => {
-  if (mineName !== val.name) {
+watch(() => unref(props.mine), (val: any) => {
+  if (mineName !== (val?.name ?? '')) {
     // 只有矿山名称变化时才重置
     mineName = val.name;
     checkedKeys.value = props.initialCheckedKeys || [];

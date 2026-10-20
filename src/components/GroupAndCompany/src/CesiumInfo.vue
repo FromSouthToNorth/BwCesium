@@ -12,21 +12,23 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch, toRaw, unref } from 'vue';
+<script setup lang="ts">
+import { ref, watch, toRaw, unref, type ComputedRef } from 'vue';
 import { Math as CesiumMath, ScreenSpaceEventHandler, ScreenSpaceEventType } from 'cesium';
+import type { Viewer } from 'cesium';
 import { useCesium } from '@/hooks/cesium/useCesium';
 import { getViewer } from '@/utils/cesium';
 
-const { viewerRef } = useCesium();
+// useCesium 为 JS 模块,这里显式声明 viewer 的类型
+const { viewerRef } = useCesium() as { viewerRef: ComputedRef<Viewer | null> };
 
 // 响应式相机信息数据
-const longitude = ref(0.0000000);
-const latitude = ref(0.0000000);
-const height = ref(0);
-const heading = ref(0.00);
-const pitch = ref(0.00);
-const roll = ref(0.00);
+const longitude = ref('0.0000000');
+const latitude = ref('0.0000000');
+const height = ref('0');
+const heading = ref('0.00');
+const pitch = ref('0.00');
+const roll = ref('0.00');
 const showInfo = ref(false);
 
 watch(

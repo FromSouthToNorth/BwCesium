@@ -28,26 +28,43 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, unref, onMounted, watch } from 'vue';
 import { Button, Tag, Collapse, Table } from 'ant-design-vue';
+import type { TableColumnsType, TablePaginationConfig } from 'ant-design-vue';
+import type { SorterResult } from 'ant-design-vue/es/table/interface';
 import { RightOutlined, LeftOutlined } from '@ant-design/icons-vue';
 import { groupCompanyLevelMine, commonItemsStat } from '@/utils/mqtt/publish';
 import { useGroupCompanyLevelMine } from './hooks/useGroupCompanyLevelMine';
-import { isArray } from '@/utils/is';
+import type { CommonItemsStatData, StatGroup, StatRow } from './hooks/useGroupCompanyLevelMine';
 
 const { getCommonItemsStat } = useGroupCompanyLevelMine();
-const emit = defineEmits(['openClick']);
+const emit = defineEmits<{ openClick: [value: boolean] }>();
+
+/** 查询过滤字段 */
+type FilterField = 'year' | 'ol' | 'pid' | 'gid' | 'iid';
+
+/** 顶部已选条件标签 */
+interface TagEntry {
+  value: FilterField;
+  label: string;
+  name?: string;
+  id?: string | number;
+}
 
 // 响应式数据
 const mapPane = ref(false);
-const selectTagArray = ref([]);
-const commonItemsStatPen = ref({
+const selectTagArray = ref<TagEntry[]>([]);
+const commonItemsStatPen = ref<{
+  data: StatGroup[];
+  key: string;
+  columns: TableColumnsType;
+}>({
   data: [],
   key: 'Id',
   columns: [],
 });
-const paging = ref({
+const paging = ref<TablePaginationConfig>({
   current: 1,
   pageSize: 10,
   pageSizeOptions: ['10', '20', '50', '200', '1000'],
@@ -56,7 +73,6 @@ const paging = ref({
   },
   showQuickJumper: true,
   showSizeChanger: true,
-  total: 0,
 });
 const sorter = ref({
   column: 'createTime',
@@ -64,7 +80,7 @@ const sorter = ref({
 });
 
 // 常量定义
-const TAGS = [
+const TAGS: TagEntry[] = [
   { value: 'year', label: '年份' },
   { value: 'ol', label: '是否在线' },
   { value: 'pid', label: '省份' },
@@ -73,24 +89,25 @@ const TAGS = [
 ];
 
 // 非响应式数据
-const parameter = {
+const parameter: Record<FilterField, string> = {
   year: '',
   ol: '',
   pid: '',
   gid: '',
   iid: '',
 };
-const tagMap = new Map();
-const tagSet = new Set();
+const tagMap = new Map<string, { id: string | number; name: string }[]>();
+const tagSet = new Set<TagEntry>();
 
 onMounted(() => {
   commonItemsStat(parameter);
 });
 
 watch(() => unref(getCommonItemsStat), (newVal) => {
+  if (!newVal) return;
   commonItemsStatPen.value.data = newVal.data;
-  commonItemsStatPen.value.columns = newVal.columns;
-  commonItemsStatPen.value.key = newVal.key;
+  commonItemsStatPen.value.columns = (newVal.columns ?? []) as TableColumnsType;
+  commonItemsStatPen.value.key = newVal.key ?? 'Id';
 });
 
 function openClick() {
@@ -98,17 +115,18 @@ function openClick() {
   emit('openClick', mapPane.value);
 }
 
-function rowOn(record) {
+function rowOn(record: StatRow) {
   return {
     onClick: () => {
       const { id, field, name } = record;
+      if (!(field in parameter)) return;
       const values = tagMap.get(field);
-      if (isArray(values) && !values.some(v => v.id === id)) {
+      if (values && !values.some(v => v.id === id)) {
         values.push({ id, name });
       } else {
         tagMap.set(field, [{ id, name }]);
       }
-      parameter[field] = id;
+      parameter[field as FilterField] = id;
       const tag = TAGS.find(t => t.value === field);
       if (tag) {
         tag.name = name;
@@ -121,7 +139,7 @@ function rowOn(record) {
   };
 }
 
-function tagClose(tag) {
+function tagClose(tag: TagEntry) {
   parameter[tag.value] = '';
   tagSet.forEach((e) => {
     if (e.value === tag.value) {
@@ -132,11 +150,16 @@ function tagClose(tag) {
   groupCompanyLevelMine(parameter);
 }
 
-function handleTableChange(pagination, filters, tableSorter) {
+function handleTableChange(
+  pagination: TablePaginationConfig,
+  _filters: Record<string, (string | number | boolean)[] | null>,
+  tableSorter: SorterResult<StatRow> | SorterResult<StatRow>[],
+) {
   // 分页、排序、筛选变化时触发
-  if (Object.keys(tableSorter).length > 0) {
-    sorter.value.column = tableSorter.field;
-    sorter.value.order = tableSorter.order === 'ascend' ? 'asc' : 'desc';
+  const currentSorter = Array.isArray(tableSorter) ? tableSorter[0] : tableSorter;
+  if (currentSorter && Object.keys(currentSorter).length > 0 && currentSorter.order) {
+    sorter.value.column = String(currentSorter.field ?? '');
+    sorter.value.order = currentSorter.order === 'ascend' ? 'asc' : 'desc';
   }
   paging.value = pagination;
 }

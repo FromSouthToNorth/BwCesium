@@ -43,7 +43,7 @@ const { setPageLoading } = useSetting();
 const TEXTURE_PATH_1 = '/src/assets/soil_texture.png';
 const TEXTURE_PATH_2 = '/src/assets/soil_texture2.png';
 const ENTITY_IDS = ['ClippingWall', 'ClippingWallDM'];
-const clippingEntities = [];
+const clippingEntities: any[] = [];
 
 /**
  * 清除裁剪墙体实体
@@ -153,7 +153,7 @@ export function mineClipping(mine, is) {
         });
       }, '地形采样失败');
     });
-  } catch (error) {
+  } catch (error: any) {
     setPageLoading(false);
     console.error('Error in mineClipping:', error);
     throw error;
@@ -223,7 +223,7 @@ export function traverseBoundaryClipping(mine, is) {
   getTraverseBoundary(mine.name);
   let index = 0;
   const stop = watch(() => unref(getTraverseBoundaryGeoJSON), (newVal) => {
-    const { mineBoundary, traverse } = toRaw(unref(newVal));
+    const { mineBoundary, traverse } = toRaw(unref(newVal)) as any;
     let cliPolygon, polygon, minZ = -100;
     if (mineBoundary && traverse) {
       const _polygon = turfConcave(traverse);
@@ -240,7 +240,7 @@ export function traverseBoundaryClipping(mine, is) {
     else {
       notification['error']({
         description: '井田边界巷道数据都没有, 请检查数据!',
-      });
+        } as any);
       setPageLoading(false);
       return;
     }
@@ -290,7 +290,7 @@ export function geojsonClipping(geojson, minZ) {
         });
       }, 'GeoJSON裁剪失败');
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in geojsonClipping:', error);
     setPageLoading(false);
   }

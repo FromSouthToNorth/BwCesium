@@ -6,7 +6,7 @@ export default defineApplicationConfig({
       proxy: {
         '/BW3DTileset': {
           target: 'http://192.168.133.57:33394/',
-          rewrite: path => path.replace(/^\/BW3DTileset/, ''),
+          rewrite: (path: string) => path.replace(/^\/BW3DTileset/, ''),
         },
         '/net': {
           target: 'http://192.168.133.110:33382/',
@@ -21,7 +21,7 @@ export default defineApplicationConfig({
         },
         '/BwMap': {
           target: 'http://192.168.133.110:33382/',
-          // rewrite: path => path.replace(/^\/BwMap/, ''),
+          // rewrite: (path: string) => path.replace(/^\/BwMap/, ''),
         },
         '/bwmes': {
           target: 'http://192.168.133.110:33382/',
@@ -38,7 +38,7 @@ export default defineApplicationConfig({
         '/BwCesium/mqtt': {
           target: 'ws://192.168.133.110:33382',
           ws: true,
-          rewrite: path => path.replace(/^\/BwCesium\/mqtt/, '/mqtt'),
+          rewrite: (path: string) => path.replace(/^\/BwCesium\/mqtt/, '/mqtt'),
         },
         '/cas/': {
           target: 'http://192.168.133.110:33382',

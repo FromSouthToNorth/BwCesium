@@ -57,7 +57,7 @@ function mergeStrategyParams(strategyParams = []) {
   }
 
   // 转换回数组格式
-  const mergedParams = []
+  const mergedParams: any[] = []
   localParamMap.forEach((value, key) => {
     mergedParams.push({
       name: key,
@@ -77,13 +77,13 @@ function mergeStrategyParams(strategyParams = []) {
  * @param {Function} [config.callback] - 发布完成后的回调函数
  * @throws {Error} 当消息发布失败时抛出错误
  */
-export function publishMessage({ code, strategyParams = [], setLoading = false, callback }) {
+export function publishMessage({ code, strategyParams = [], setLoading = false, callback }: any = {}) {
   try {
     // 合并参数
     const mergedParams = mergeStrategyParams(strategyParams)
 
     // 构建消息对象
-    const message = buildMessageObject(code, mergedParams)
+    const message: any = buildMessageObject(code, mergedParams)
 
     // 发布消息
     mqtt.publish(message, callback)
@@ -99,7 +99,7 @@ export function publishMessage({ code, strategyParams = [], setLoading = false, 
       messageId: message.id || 'unknown',
       message: message
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[MQTT Publish Error] 消息发布失败`, {
       code,
       error: error.message
@@ -141,7 +141,7 @@ export function createParamPublisher({ code, setLoading = false, paramName = 'Mi
    * @param {any} paramValue - 参数值
    * @param {Function} [callback] - 发布完成后的回调函数
    */
-  return function publishWithParam(paramValue, callback) {
+  return function publishWithParam(paramValue, callback?) {
     publishMessage({
       code,
       strategyParams: [
@@ -177,7 +177,7 @@ export function createMineNamePublisher(code, setLoading = false) {
  * @param {Object} parameter - 参数对象
  * @param {Function} [callback] - 发布完成后的回调函数
  */
-export function groupCompanyLevelMine(parameter, callback) {
+export function groupCompanyLevelMine(parameter?, callback?) {
   publishMessage({
     code: 4694,
     strategyParams: objectToStrategyParams(parameter),
@@ -188,13 +188,19 @@ export function groupCompanyLevelMine(parameter, callback) {
 
 /**
  * 发布通用项目统计信息
- * @param {Array} strategyParams - 策略参数数组
+ * @param {Array|Object} strategyParams - 策略参数数组，或普通参数对象（自动转换并过滤空值）
  * @param {Function} [callback] - 发布完成后的回调函数
  */
-export function commonItemsStat(strategyParams, callback) {
+export function commonItemsStat(strategyParams, callback?) {
+  const params = isArray(strategyParams)
+    ? strategyParams
+    : objectToStrategyParams(strategyParams).filter(
+        ({ value }) => value !== '' && value !== null && value !== undefined,
+      )
+
   publishMessage({
     code: 5062,
-    strategyParams,
+    strategyParams: params,
     callback,
   })
 }

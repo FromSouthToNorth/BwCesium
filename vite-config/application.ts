@@ -3,15 +3,20 @@ import { resolve } from 'node:path'
 import dayjs from 'dayjs'
 import { readPackageJSON } from 'pkg-types'
 import { defineConfig, loadEnv, mergeConfig } from 'vite'
+import type { ConfigEnv, UserConfig } from 'vite'
 
 import { commonConfig } from './common'
 
 import { createPlugins } from './plugins'
 
-function defineApplicationConfig(defineOptions = {}) {
+interface ApplicationOptions {
+  overrides?: UserConfig
+}
+
+function defineApplicationConfig(defineOptions: ApplicationOptions = {}) {
   const { overrides = {} } = defineOptions
 
-  return defineConfig(async ({ command, mode }) => {
+  return defineConfig(async ({ command, mode }: ConfigEnv) => {
     const root = process.cwd()
     const isBuild = command === 'build'
     const { VITE_BUILD_COMPRESS } = loadEnv(
@@ -23,9 +28,9 @@ function defineApplicationConfig(defineOptions = {}) {
 
     const defineData = await createDefineData(root)
 
-    const pathResolve = (pathname) => resolve(root, '.', pathname)
+    const pathResolve = (pathname: string) => resolve(root, '.', pathname)
     const timestamp = new Date().getTime()
-    const applicationConfig = {
+    const applicationConfig: UserConfig = {
       // base: VITE_PUBLIC_PATH,
       resolve: {
         alias: [
@@ -52,9 +57,12 @@ function defineApplicationConfig(defineOptions = {}) {
           output: {
             // 入口文件名
             entryFileNames: `assets/entry/[name]-[hash]-${timestamp}.js`,
-            manualChunks: {
-              vue: ['vue', 'pinia', 'vue-router'],
-              antd: ['ant-design-vue', '@ant-design/icons-vue'],
+            // vite 8 (rolldown) 不再支持对象形式,改用函数形式分包
+            manualChunks(id: string) {
+              if (!id.includes('node_modules')) return undefined
+              if (/[\\/]node_modules[\\/](vue|@vue|pinia|vue-router)[\\/]/.test(id)) return 'vue'
+              if (/[\\/]node_modules[\\/](ant-design-vue|@ant-design)[\\/]/.test(id)) return 'antd'
+              return undefined
             },
           },
         },
@@ -75,7 +83,7 @@ function defineApplicationConfig(defineOptions = {}) {
   })
 }
 
-async function createDefineData(root) {
+async function createDefineData(root: string) {
   try {
     const pkgJson = await readPackageJSON(root)
     const { dependencies, devDependencies, name, version } = pkgJson
@@ -88,7 +96,7 @@ async function createDefineData(root) {
       __APP_INFO__: JSON.stringify(__APP_INFO__),
     }
   }
-  catch (error) {
+  catch {
     return {}
   }
 }

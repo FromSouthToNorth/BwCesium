@@ -18,7 +18,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, watchEffect } from 'vue';
 import { Modal } from 'ant-design-vue';
 import { useDraggable } from '@vueuse/core';
@@ -53,7 +53,7 @@ const props = defineProps({
 const emit = defineEmits(['update:open', 'afterClose', 'cancel', 'ok']);
 
 const internalOpen = ref(props.open);
-const modalTitleRef = ref(null);
+const modalTitleRef = ref<any>(null);
 
 // 监听 open 属性变化
 watch(() => props.open, (val) => {

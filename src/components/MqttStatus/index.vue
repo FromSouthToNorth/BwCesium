@@ -7,11 +7,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { getMqttStatusInfo, showMqttStatusModal } from '@/utils/mqtt'
 
-const statusInfo = ref(null)
+const statusInfo = ref<any>(null)
 
 const updateStatus = () => {
   statusInfo.value = getMqttStatusInfo()

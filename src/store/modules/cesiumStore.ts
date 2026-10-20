@@ -2,10 +2,10 @@ import { defineStore } from "pinia";
 
 export const useCesiumStore = defineStore('cesium', {
   state: () => ({
-    viewer: null,
+    viewer: null as any,
   }),
   actions: {
-    setViewer(viewer) {
+    setViewer(viewer: any) {
       console.log('setViewer', viewer);
       this.viewer = viewer
     },

@@ -1,22 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { ref, unref, watch, onUnmounted, onMounted, toRaw, nextTick } from 'vue';
 import { InputNumber } from 'ant-design-vue';
 // import Slider from '@/components/Slider/index.vue'
 import { translateModel, getViewer } from '@/utils/cesium';
 import { Color as CesiumColor, CallbackProperty, Model, Math } from 'cesium';
 
+const isModel = ref(false);
 const props = defineProps({
   model: {
-    type: Object,
+    type: Object as any,
     required: true,
-    validator: (value) => {
+    validator: (value: any) => {
       return value && value.boundingSphere && value.boundingSphere.center;
     }
   }
 });
 
 // 原点参考点
-// const originPoint = ref(null);
+// const originPoint = ref<any>(null);
 
 // 位置参数
 const translation = ref({
@@ -104,7 +105,7 @@ onMounted(async () => {
     //     scale: 0.1,
     //   }
     // });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error initializing ModelSlider component:', error);
   }
 });
@@ -118,7 +119,7 @@ onUnmounted(() => {
     //   originPoint.value = null;
     //   console.log('ModelSlider component cleaned up');
     // }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during component cleanup:', error);
   }
 });

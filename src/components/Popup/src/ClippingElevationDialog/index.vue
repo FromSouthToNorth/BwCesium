@@ -2,6 +2,6 @@
   <ClippingElevationDialog v-bind="$attrs" />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import ClippingElevationDialog from './src/ClippingElevationDialog.vue'
 </script>

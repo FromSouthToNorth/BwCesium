@@ -1,3 +1,4 @@
+declare const BW_SSO_SDK: any
 import { getDingtalkToToken } from '@/api/login';
 import { setToken } from '@/utils/auth';
 

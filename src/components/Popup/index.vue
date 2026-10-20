@@ -16,7 +16,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, unref, toRaw } from 'vue'
 import { SceneTransforms, Cartesian3, Matrix4, BoundingSphere, Intersect, defined } from 'cesium'
 import { getViewer } from '@/utils/cesium';
@@ -47,8 +47,8 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const visible = ref(false)
-const popupRef = ref(null)
-const removePostRender = ref(null)
+const popupRef = ref<any>(null)
+const removePostRender = ref<any>(null)
 
 // 计算弹窗位置样式
 const popupStyle = computed(() => {
@@ -69,7 +69,7 @@ const popupStyle = computed(() => {
 })
 
 // 屏幕坐标
-const screenPosition = ref(null)
+const screenPosition = ref<any>(null)
 
 const updatePosition = () => {
   if (!props.position || !getViewer()?.scene) {
@@ -80,7 +80,7 @@ const updatePosition = () => {
   try {
     const pos = SceneTransforms.worldToWindowCoordinates(
       getViewer().scene,
-      props.position
+      props.position as any
     )
 
     if (!pos) {
@@ -90,7 +90,7 @@ const updatePosition = () => {
 
     screenPosition.value = pos
     visible.value = true
-  } catch (e) {
+  } catch (e: any) {
     console.warn('CesiumPopup: 坐标转换失败', e)
     visible.value = false
   }

@@ -32,12 +32,12 @@ function getPolylineHeights(entity, viewer) {
     }
 
     // 获取所有顶点的高度
-    const heights = [];
+    const heights: any[] = [];
     for (const position of positions) {
       try {
         const cartographic = Cartographic.fromCartesian(position);
         heights.push(cartographic.height);
-      } catch (error) {
+      } catch (error: any) {
         // 如果某个顶点转换失败，使用null占位
         console.warn('Failed to convert polyline vertex to cartographic:', error);
         heights.push(null);
@@ -45,7 +45,7 @@ function getPolylineHeights(entity, viewer) {
     }
 
     return heights;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting polyline heights:', error);
     return null;
   }
@@ -72,12 +72,12 @@ function getPolylineVolumeHeights(entity, viewer) {
     }
 
     // 获取所有顶点的高度
-    const heights = [];
+    const heights: any[] = [];
     for (const position of positions) {
       try {
         const cartographic = Cartographic.fromCartesian(position);
         heights.push(cartographic.height);
-      } catch (error) {
+      } catch (error: any) {
         // 如果某个顶点转换失败，使用null占位
         console.warn('Failed to convert polylineVolume vertex to cartographic:', error);
         heights.push(null);
@@ -88,7 +88,7 @@ function getPolylineVolumeHeights(entity, viewer) {
       type: 'polylineVolume',
       heights: heights,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting polylineVolume heights:', error);
     return null;
   }
@@ -115,12 +115,12 @@ function getWallHeights(entity, viewer) {
     }
 
     // 获取所有顶点的高度
-    const heights = [];
+    const heights: any[] = [];
     for (const position of positions) {
       try {
         const cartographic = Cartographic.fromCartesian(position);
         heights.push(cartographic.height);
-      } catch (error) {
+      } catch (error: any) {
         // 如果某个顶点转换失败，使用null占位
         console.warn('Failed to convert wall vertex to cartographic:', error);
         heights.push(null);
@@ -128,9 +128,8 @@ function getWallHeights(entity, viewer) {
     }
 
     // 获取墙体的最小和最大高度（如果存在）
-    let minimumHeights = null;
-    let maximumHeights = null;
-
+    let minimumHeights: any = null;
+    let maximumHeights: any = null;
     if (entity.wall.minimumHeights) {
       minimumHeights = entity.wall.minimumHeights.getValue
         ? entity.wall.minimumHeights.getValue(viewer.clock.currentTime)
@@ -149,7 +148,7 @@ function getWallHeights(entity, viewer) {
       minimumHeights: minimumHeights,
       maximumHeights: maximumHeights
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting wall heights:', error);
     return null;
   }
@@ -176,28 +175,28 @@ function getPolygonHeights(entity, viewer) {
     }
 
     // 获取外边界顶点的高度
-    const boundaryHeights = [];
+    const boundaryHeights: any[] = [];
     for (const position of hierarchy.positions) {
       try {
         const cartographic = Cartographic.fromCartesian(position);
         boundaryHeights.push(cartographic.height);
-      } catch (error) {
+      } catch (error: any) {
         console.warn('Failed to convert polygon boundary vertex to cartographic:', error);
         boundaryHeights.push(null);
       }
     }
 
     // 获取孔洞顶点的高度
-    const holeHeights = [];
+    const holeHeights: any[] = [];
     if (hierarchy.holes && isArray(hierarchy.holes)) {
       for (const hole of hierarchy.holes) {
         if (hole.positions && isArray(hole.positions)) {
-          const holeHeightArray = [];
+          const holeHeightArray: any[] = [];
           for (const position of hole.positions) {
             try {
               const cartographic = Cartographic.fromCartesian(position);
               holeHeightArray.push(cartographic.height);
-            } catch (error) {
+            } catch (error: any) {
               console.warn('Failed to convert hole vertex to cartographic:', error);
               holeHeightArray.push(null);
             }
@@ -208,7 +207,7 @@ function getPolygonHeights(entity, viewer) {
     }
 
     // 获取多边形的高度属性（如果存在）
-    let polygonHeight = null;
+    let polygonHeight: any = null;
     if (entity.polygon.height !== undefined) {
       polygonHeight = typeof entity.polygon.height.getValue === 'function'
         ? entity.polygon.height.getValue(viewer.clock.currentTime)
@@ -220,7 +219,7 @@ function getPolygonHeights(entity, viewer) {
       holes: holeHeights,
       polygonHeight: polygonHeight
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting polygon heights:', error);
     return null;
   }
@@ -240,7 +239,7 @@ function getModelHeight(entity, viewer) {
   try {
     const cartographic = Cartographic.fromCartesian(position);
     return cartographic.height;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting model height:', error);
     return null;
   }
@@ -257,7 +256,7 @@ export function getEntityHeight(entity, viewer) {
     // 根据实体类型调用不同的高度获取方法
     if (entity.polyline) {
       // // 线实体 - 检查是否有 polylineVolume 属性
-      let volumeHeights = null;
+      let volumeHeights: any = null;
       if (entity.polylineVolume) {
         // 线体积实体 - 返回所有顶点高度数组和长度数组
         volumeHeights = getPolylineVolumeHeights(entity, viewer);
@@ -321,7 +320,7 @@ export function getEntityHeight(entity, viewer) {
         height: cartographic.height
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting entity height:', error);
     return null;
   }
@@ -379,7 +378,7 @@ function adjustPointEntity(entity, newHeight, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adjusting point entity height:', error);
     return false;
   }
@@ -426,7 +425,7 @@ function adjustPolylineEntity(entity, offset, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adjusting polyline entity height:', error);
     return false;
   }
@@ -493,7 +492,7 @@ function adjustPolygonEntity(entity, offset, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adjusting polygon entity height:', error);
     return false;
   }
@@ -536,7 +535,7 @@ function adjustPolylineVolumeEntity(entity, offset, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adjusting polylineVolume entity height:', error);
     return false;
   }
@@ -610,7 +609,7 @@ function adjustWallEntity(entity, offset, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adjusting wall entity height:', error);
     return false;
   }
@@ -679,7 +678,7 @@ function restorePolylineHeight(entity, originalHeightInfo, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error restoring polyline height:', error);
     return false;
   }
@@ -726,7 +725,7 @@ function restorePolygonHeight(entity, originalHeightInfo, viewer) {
     });
 
     // 恢复孔洞顶点的高度
-    const newHoles = [];
+    const newHoles: any[] = [];
     if (hierarchy.holes && isArray(hierarchy.holes)) {
       for (let i = 0; i < hierarchy.holes.length; i++) {
         const hole = hierarchy.holes[i];
@@ -793,7 +792,7 @@ function restorePolygonHeight(entity, originalHeightInfo, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error restoring polygon height:', error);
     return false;
   }
@@ -847,7 +846,7 @@ function restorePolylineVolumeHeight(entity, originalHeightInfo, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error restoring polylineVolume height:', error);
     return false;
   }
@@ -935,7 +934,7 @@ function restoreWallHeight(entity, originalHeightInfo, viewer) {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error restoring wall height:', error);
     return false;
   }
@@ -996,9 +995,8 @@ export function adjustEntityHeight(entity, offset, viewer) {
   }
 
   let success = false;
-  let error = null;
-  let newHeightInfo = null;
-
+  let error: any = null;
+  let newHeightInfo: any = null;
   try {
     // 根据实体类型调用不同的调整方法
     if (entity.polyline) {
@@ -1006,7 +1004,7 @@ export function adjustEntityHeight(entity, offset, viewer) {
       success = adjustPolylineEntity(entity, offset, viewer);
       if (success) {
         // 计算调整后的高度信息
-        const newHeights = heightInfo.heights.map(h => h !== null ? h + offset : null);
+        const newHeights = heightInfo.heights?.map(h => h !== null ? h + offset : null);
         newHeightInfo = {
           type: 'polyline',
           heights: newHeights,
@@ -1017,11 +1015,11 @@ export function adjustEntityHeight(entity, offset, viewer) {
       success = adjustPolygonEntity(entity, offset, viewer);
       if (success) {
         // 计算调整后的高度信息
-        const newBoundary = heightInfo.boundary.map(h => h !== null ? h + offset : null);
-        const newHoles = heightInfo.holes.map(hole =>
+        const newBoundary = heightInfo.boundary?.map(h => h !== null ? h + offset : null);
+        const newHoles = heightInfo.holes?.map(hole =>
           hole.map(h => h !== null ? h + offset : null)
         );
-        const allHeights = [...newBoundary, ...newHoles.flat()];
+        const allHeights = [...(newBoundary ?? []), ...(newHoles ?? [])].flatMap(h => h ?? []);
         const validHeights = allHeights.filter(h => h !== null);
 
         newHeightInfo = {
@@ -1035,10 +1033,9 @@ export function adjustEntityHeight(entity, offset, viewer) {
       success = adjustWallEntity(entity, offset, viewer);
       if (success) {
         // 计算调整后的高度信息
-        const newHeights = heightInfo.heights.map(h => h !== null ? h + offset : null);
-        let newMinimumHeights = null;
-        let newMaximumHeights = null;
-
+        const newHeights = heightInfo.heights?.map(h => h !== null ? h + offset : null);
+        let newMinimumHeights: any = null;
+        let newMaximumHeights: any = null;
         if (heightInfo.minimumHeights && isArray(heightInfo.minimumHeights)) {
           newMinimumHeights = heightInfo.minimumHeights.map(h => h + offset);
         }
@@ -1081,7 +1078,7 @@ export function adjustEntityHeight(entity, offset, viewer) {
     if (!success && !error) {
       error = '高度调整失败';
     }
-  } catch (err) {
+  } catch (err: any) {
     success = false;
     error = err.message;
     console.error('Error in adjustEntityHeight:', err);
@@ -1110,12 +1107,12 @@ export function batchAdjustHeight(entities, offset) {
       total: entities.length,
       success: 0,
       failed: 0,
-      details: [],
+      details: [] as any[],
       startTime: Date.now()
     };
 
     entities.forEach((item, index) => {
-      const result = adjustEntityHeight(item.entity, offset, viewer);
+      const result: any = adjustEntityHeight(item.entity, offset, viewer);
       result.index = index;
       result.source = item.source;
       result.type = item.type;
@@ -1130,8 +1127,8 @@ export function batchAdjustHeight(entities, offset) {
       }
     });
 
-    results.endTime = Date.now();
-    results.duration = results.endTime - results.startTime;
+    (results as any).endTime = Date.now();
+    (results as any).duration = (results as any).endTime - (results as any).startTime;
 
     return results;
   }, '批量调整高度失败');
@@ -1165,7 +1162,7 @@ export function restoreEntityHeight(entity, viewer) {
   }
 
   let success = false;
-  let error = null;
+  let error: any = null;
   let offset = 0;
 
   try {
@@ -1192,7 +1189,7 @@ export function restoreEntityHeight(entity, viewer) {
       }
     } else {
       // 点实体或模型实体：计算单个高度的偏移量
-      offset = originalHeightInfo.height - currentHeightInfo.height;
+      offset = (originalHeightInfo.height ?? 0) - (currentHeightInfo.height ?? 0);
       const result = adjustEntityHeight(entity, offset, viewer);
       success = result.success;
       error = result.error;
@@ -1202,7 +1199,7 @@ export function restoreEntityHeight(entity, viewer) {
     if (success) {
       clearOriginalHeight(entityId);
     }
-  } catch (err) {
+  } catch (err: any) {
     success = false;
     error = err.message;
     console.error('Error in restoreEntityHeight:', err);
@@ -1229,12 +1226,12 @@ export function batchRestoreHeight(entities) {
       total: entities.length,
       restored: 0,
       failed: 0,
-      details: [],
+      details: [] as any[],
       startTime: Date.now()
     };
 
     entities.forEach((item, index) => {
-      const result = restoreEntityHeight(item.entity, viewer);
+      const result: any = restoreEntityHeight(item.entity, viewer);
       result.index = index;
       result.source = item.source;
       result.type = item.type;
@@ -1248,8 +1245,8 @@ export function batchRestoreHeight(entities) {
       }
     });
 
-    results.endTime = Date.now();
-    results.duration = results.endTime - results.startTime;
+    (results as any).endTime = Date.now();
+    (results as any).duration = (results as any).endTime - (results as any).startTime;
 
     return results;
   }, '批量恢复高度失败');

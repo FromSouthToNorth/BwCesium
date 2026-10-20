@@ -40,8 +40,7 @@ class GeoRBush extends RBush {
 
 // 碰撞检测函数
 function detectCollisions(points, tree, distanceThreshold = 20) {
-  const collisions = [];
-
+  const collisions: any[] = [];
   for (let i = 0; i < points.length; i++) {
     const point = points[i];
     // 定义搜索范围（以经纬度为单位，粗略估算）
@@ -149,7 +148,7 @@ function resolveCollisions(points, tree, distanceThreshold = 20) {
 export function offsetMinePoint(data) {
   console.log('offsetMinePoint: ', data);
   const tree = new GeoRBush();
-  const points = [];
+  const points: any[] = [];
   data.forEach((e) => {
     const { B, L, MineDesc } = e;
     points.push({ B, L, MineDesc });

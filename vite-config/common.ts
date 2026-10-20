@@ -1,6 +1,7 @@
 import UnoCSS from 'unocss/vite'
+import type { UserConfig } from 'vite'
 
-const commonConfig = (mode) => ({
+const commonConfig = (mode: string): UserConfig => ({
   server: {
     host: true,
   },

@@ -113,7 +113,7 @@ const PRESET_GENERATORS = {
    * @param {Object} adjustments - 距离调整参数
    * @returns {Object} 距离控制配置对象
    */
-  createDistanceControl(adjustments = {}) {
+  createDistanceControl(adjustments: any = {}) {
     const {
       farScale = DISTANCE_CONFIG.SCALE.FAR_SCALE,
       farAlpha = DISTANCE_CONFIG.TRANSLUCENCY.FAR_ALPHA,
@@ -294,7 +294,7 @@ export function enhanceLabelWithDistanceControl(labelConfig = {}, type = LABEL_P
     throw new Error('labelConfig 必须是一个有效的对象');
   }
 
-  const distanceConfig = getLabelConfig(type);
+  const distanceConfig: any = getLabelConfig(type);
 
   // 只添加距离控制相关的配置
   return {
@@ -321,7 +321,7 @@ export function enhanceLabelWithDistanceControl(labelConfig = {}, type = LABEL_P
  *   distanceType: LABEL_PRESETS.NORMAL
  * });
  */
-export function createCustomLabelConfig(baseConfig = {}, options = {}) {
+export function createCustomLabelConfig(baseConfig: any = {}, options: any = {}) {
   const {
     enableDistanceControl = true,
     distanceType = LABEL_PRESETS.NORMAL,

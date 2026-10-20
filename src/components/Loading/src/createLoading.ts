@@ -3,7 +3,7 @@ import { createVNode, defineComponent, h, reactive, render } from 'vue'
 import Loading from './Loading.vue'
 
 export function createLoading(props, target, wait = false) {
-  let vm = null
+  let vm: any = null
   const data = reactive({
     tip: '',
     loading: true,
@@ -18,7 +18,7 @@ export function createLoading(props, target, wait = false) {
 
   vm = createVNode(LoadingWrap)
 
-  let container = null
+  let container: any = null
   if (wait) {
     setTimeout(() => {
       render(vm, (container = document.createElement('div')))

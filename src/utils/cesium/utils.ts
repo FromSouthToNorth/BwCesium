@@ -116,7 +116,7 @@ export function computePolygonArea(positions) {
  * const circle = generateCircleVertices(100, 36, centerPoint);
  */
 export function generateCircleVertices(radius, segments = 36, center = Cartesian3.ZERO) {
-  const vertices = [];
+  const vertices: any[] = [];
   for (let i = 0; i < segments; i++) {
     const angle = (i / segments) * Math.PI * 2;
     const x = center.x + radius * Math.cos(angle);

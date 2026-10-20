@@ -1,10 +1,12 @@
+declare const L: any
+declare const store: any
 import { SceneTransforms, Matrix4 } from 'cesium'
 import { select as d3_select } from 'd3-selection';
 import { isArray } from './is'
 
 let _menu = d3_select(null);
 
-let _removePostRender = null
+let _removePostRender: any = null
 const lastCamera = new Matrix4();
 export function utilMenu(context) {
   const editMenu = function () {
@@ -87,11 +89,11 @@ export function utilMenu(context) {
           .text(d => d.title)
           .on('click', click);
 
-        buttonsEnter.on('mouseover', function () {
+        buttonsEnter.on('mouseover', function (this: any) {
           const dropdown = d3_select(this).select('.menu-dropdown-content')
           dropdown.style('display', 'block');
           updateDropdownPosition(dropdown);
-        }).on('mouseout', function () {
+        }).on('mouseout', function (this: any) {
           d3_select(this).select('.menu-dropdown-content')
             .style('display', 'none');
         });
@@ -114,7 +116,7 @@ export function utilMenu(context) {
     }
 
     if (buttonsEnter) {
-      buttonsEnter.each(function (d) {
+      buttonsEnter.each(function (this: any, d) {
         d3_select(this)
           .append('div')
           .text(d.title);
@@ -274,7 +276,7 @@ export function showLRPoint({ relatedTarget }) {
 
   try {
     map.fitBounds(LRMarkerFeatureGroup.getBounds().pad(1.8));
-  } catch (error) {
+  } catch (error: any) {
     console.error('fitBounds error:', error);
   }
 }

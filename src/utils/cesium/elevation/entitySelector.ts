@@ -28,7 +28,7 @@ export function getEntityPosition(entity, viewer) {
       return _entity.position.getValue(viewer.clock.currentTime);
     }
     return _entity.position;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting entity position:', error);
     return null;
   }
@@ -50,7 +50,7 @@ function getPolylinePositions(entity, viewer) {
       : entity.polyline.positions;
 
     return isArray(positions) ? positions : null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting polyline positions:', error);
     return null;
   }
@@ -75,7 +75,7 @@ function getWallPositions(entity, viewer) {
     }
 
     return positions;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting wall positions:', error);
     return null;
   }
@@ -101,7 +101,7 @@ function getPolygonPositions(entity, viewer) {
     }
 
     return hierarchy.positions;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting polygon positions:', error);
     return null;
   }
@@ -215,7 +215,7 @@ export function getEntityType(entity) {
  */
 export function getEntitiesInClippingArea(polygon) {
   return safeCesiumOperation((viewer) => {
-    const entities = [];
+    const entities: any[] = [];
     // 1. 筛选viewer.entities中的实体
     viewer.entities.values.forEach(entity => {
       if (isEntityInPolygon(entity, polygon, viewer)) {
@@ -255,7 +255,7 @@ export function getEntitiesInClippingArea(polygon) {
 export function getEntityStatistics(polygon) {
   const entities = getEntitiesInClippingArea(polygon);
 
-  const stats = {
+  const stats: any = {
     total: entities.length,
     byType: {},
     bySource: {
@@ -293,9 +293,8 @@ export function getEntityStatistics(polygon) {
  */
 export function getEntityInfo(entity, viewer) {
   const position = getEntityPosition(entity, viewer);
-  let coordinates = null;
-  let height = null;
-
+  let coordinates: any = null;
+  let height: any = null;
   if (position) {
     const cartographic = Cartographic.fromCartesian(position);
     coordinates = {
@@ -310,13 +309,13 @@ export function getEntityInfo(entity, viewer) {
   if (typeof name === 'function') {
     try {
       name = name.getValue(viewer.clock.currentTime);
-    } catch (e) {
+    } catch (e: any) {
       name = '动态名称实体';
     }
   }
 
   // 获取实体描述
-  let description = null;
+  let description: any = null;
   if (entity.description) {
     try {
       if (typeof entity.description.getValue === 'function') {
@@ -324,7 +323,7 @@ export function getEntityInfo(entity, viewer) {
       } else {
         description = entity.description;
       }
-    } catch (e) {
+    } catch (e: any) {
       // 忽略错误
     }
   }

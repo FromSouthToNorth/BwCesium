@@ -6,7 +6,7 @@
   </BaseDraggableModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Operate from './Operate.vue';
 import BaseDraggableModal from './BaseDraggableModal.vue';
 

@@ -1,5 +1,5 @@
-import { Mqtt } from './Mqtt.js'
-import { formatDuration, createStatusHTML, exportStatusAsJSON, showAdvancedStatusModal } from './status.js'
+import { Mqtt } from './Mqtt'
+import { formatDuration, createStatusHTML, exportStatusAsJSON, showAdvancedStatusModal } from './status'
 
 /**
  * MQTT 模块入口文件
@@ -43,7 +43,7 @@ export function contextInit() {
       clientId: mqtt.clientId,
       connected: mqtt.isConnected(),
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[MQTT] 上下文初始化失败', error)
     throw error
   }
@@ -62,7 +62,7 @@ export function safeContextInit() {
       clientId: mqtt.clientId,
       message: 'MQTT 上下文初始化成功',
     }
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
       error: error.message,
@@ -117,7 +117,7 @@ export function initMqttAsync(timeout = 30000) {
           })
         }
       }, 100)
-    } catch (error) {
+    } catch (error: any) {
       resolve({
         success: false,
         error: error.message,
@@ -183,7 +183,7 @@ export function reconnectMqtt() {
       return true
     }
     return false
-  } catch (error) {
+  } catch (error: any) {
     console.error('[MQTT] 重新连接失败', error)
     return false
   }
@@ -228,7 +228,7 @@ export function publishMessage(message, callback) {
   try {
     mqtt.publish(message, callback)
     return true
-  } catch (error) {
+  } catch (error: any) {
     console.error('[MQTT] 消息发布失败', error)
     return false
   }
@@ -332,7 +332,7 @@ export async function copyMqttStatusToClipboard() {
     const statusJSON = exportMqttStatus()
     await navigator.clipboard.writeText(statusJSON)
     console.log('[MQTT] 状态信息已复制到剪贴板')
-  } catch (error) {
+  } catch (error: any) {
     console.error('[MQTT] 复制剪贴板失败', error)
   }
 }

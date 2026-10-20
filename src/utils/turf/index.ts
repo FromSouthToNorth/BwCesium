@@ -107,7 +107,7 @@ export function densifyPolygon(polygon, pointsPerEdge = 5) {
     const ensureClosed = (r) => (closed(r) ? r.slice() : r.concat([r[0]]))
 
     const src = ensureClosed(ring)
-    const out = []
+    const out: any[] = []
     // 逐条边处理，在相邻点之间插入均匀分布的新点
     for (let i = 0; i < src.length - 1; i++) {
       const start = src[i]
@@ -246,7 +246,7 @@ export function turfPoint(item) {
 /**
  * 创建要素集合（FeatureCollection）
  * @param {Array|Object} items - 要素数组或对象
- * @returns {FeatureCollection} 要素集合
+ * @returns {import('geojson').FeatureCollection} 要素集合
  */
 export function turfFeatureCollection(items) {
   if (isArray(items)) {
@@ -262,7 +262,7 @@ export function turfFeatureCollection(items) {
 
 /**
  * 计算 GeoJSON 对象的边界框
- * @param {GeoJSON} items - 输入的 GeoJSON 对象
+ * @param {import('geojson').GeoJSON} items - 输入的 GeoJSON 对象
  * @returns {number[]} [minX, minY, maxX, maxY] 边界框坐标
  */
 export function turfBbox(items) {

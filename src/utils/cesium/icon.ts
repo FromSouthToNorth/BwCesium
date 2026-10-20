@@ -82,10 +82,10 @@ export async function createIconMarker(entity, key) {
       entity.billboard = entity.billboard || {};
       entity.billboard.image = result.toDataURL();
       entity.label = buildLabel(_label || DEFAULT_NAME, key);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create icon from URL:', error);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in createIconMarker:', error);
   }
 }

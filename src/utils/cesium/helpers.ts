@@ -31,7 +31,7 @@ export function getEntityProperties(entity, viewer) {
       return entity.properties.getValue(viewer?.clock?.currentTime);
     }
     return entity.properties;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting entity properties:', error);
     return null;
   }
@@ -46,8 +46,8 @@ export function getEntityProperties(entity, viewer) {
  */
 export function getValidColor(color, defaultColor = 'WHITE', CesiumColor = null) {
   // 如果没有传入 CesiumColor，尝试从全局获取
-  if (!CesiumColor && window.Cesium) {
-    CesiumColor = window.Cesium.Color;
+  if (!CesiumColor && (window as any).Cesium) {
+    CesiumColor = (window as any).Cesium.Color;
   }
 
   if (!CesiumColor) {
@@ -78,7 +78,7 @@ export function withErrorHandling(asyncFn, errorMessage = 'Error') {
   return async (...args) => {
     try {
       return await asyncFn(...args);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${errorMessage}:`, error);
       throw error;
     }
@@ -133,7 +133,7 @@ export function safeCesiumOperation(operation, errorMessage = 'Cesium operation 
       throw new Error('Cesium viewer not available');
     }
     return operation(viewer);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`${errorMessage}:`, error);
     throw error;
   }
@@ -152,7 +152,7 @@ export function addEntities(entities, viewer = null) {
     return [];
   }
 
-  const addedEntities = [];
+  const addedEntities: any[] = [];
   entities.forEach(entity => {
     if (entity) {
       const addedEntity = targetViewer.entities.add(entity);
@@ -167,7 +167,7 @@ export function addEntities(entities, viewer = null) {
  * @param {Cesium.Entity[]} entities - 实体数组
  * @param {Cesium.Viewer} viewer - Cesium viewer 实例
  */
-export function removeEntities(entities) {
+export function removeEntities(entities, viewer?: any) {
   const targetViewer = getViewer();
   if (!targetViewer) {
     console.warn('Cannot remove entities: viewer not available');

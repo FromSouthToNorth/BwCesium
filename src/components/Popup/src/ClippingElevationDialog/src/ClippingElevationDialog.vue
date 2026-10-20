@@ -79,7 +79,7 @@
   </BaseDraggableModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { InputNumber, Checkbox, Button, Tag, Alert, Spin, message } from 'ant-design-vue'
 import BaseDraggableModal from '../../BaseDraggableModal.vue';
@@ -113,7 +113,7 @@ const visible = ref(props.open)
 const heightOffset = ref(100) // 默认抬升50米
 const previewEnabled = ref(false)
 const loading = ref(false)
-const elevationInfo = ref(null)
+const elevationInfo = ref<any>(null)
 
 // 计算属性
 const clippingInfo = computed(() => {
@@ -181,7 +181,7 @@ async function applyPreview() {
     // 这里应该实现预览逻辑，但为了简化，我们先不实现完整的预览
     // 实际实现时应该临时调整实体高度，但不保存原始高度
     message.info(`预览：${heightOffset.value > 0 ? '抬升' : '下降'} ${Math.abs(heightOffset.value)}米`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('预览失败:', error)
     message.error('预览失败: ' + error.message)
   } finally {
@@ -200,7 +200,7 @@ async function handleApply() {
 
   try {
     loading.value = true
-    const results = await adjustClippingAreaElevation(heightOffset.value)
+    const results: any = await adjustClippingAreaElevation(heightOffset.value)
 
     if (results.success > 0) {
       message.success(`成功调整 ${results.success} 个实体的高度`)
@@ -214,7 +214,7 @@ async function handleApply() {
     if (results.failed > 0) {
       message.warning(`${results.failed} 个实体调整失败`)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('高度调整失败:', error)
     message.error('高度调整失败: ' + error.message)
   } finally {
@@ -227,7 +227,7 @@ async function handleRestore() {
 
   try {
     loading.value = true
-    const results = await restoreClippingAreaElevation()
+    const results: any = await restoreClippingAreaElevation()
 
     if (results.restored > 0) {
       message.success(`成功恢复 ${results.restored} 个实体的高度`)
@@ -241,7 +241,7 @@ async function handleRestore() {
     if (results.failed > 0) {
       message.warning(`${results.failed} 个实体恢复失败`)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('高度恢复失败:', error)
     message.error('高度恢复失败: ' + error.message)
   } finally {
@@ -271,14 +271,14 @@ function handleCancel() {
 function updateElevationInfo() {
   try {
     elevationInfo.value = getClippingElevationInfo()
-  } catch (error) {
+  } catch (error: any) {
     console.error('更新裁切区域信息失败:', error)
     elevationInfo.value = null
   }
 }
 
 // 监听裁切区域变化（简单轮询实现）
-let updateInterval = null
+let updateInterval: any = null
 
 function startInfoUpdate() {
   updateInterval = setInterval(() => {

@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia'
 import { store } from '@/store'
 
-let timeId = null
-export const useAppStore = defineStore({
-  id: 'app',
+let timeId: any = null
+export const useAppStore = defineStore('app', {
   state: () => ({
     pageLoading: false
   }),

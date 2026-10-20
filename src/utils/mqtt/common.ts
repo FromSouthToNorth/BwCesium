@@ -5,7 +5,7 @@
 
 import { formatToDateTime } from '@/utils/dateUtils'
 import { message as antMessage } from 'ant-design-vue'
-import pako from 'pako'
+import { ungzip } from 'pako'
 
 /**
  * 创建标准化日志记录器
@@ -62,22 +62,21 @@ export function validateMessage(message) {
 
 /**
  * 解析 MQTT 消息内容
- * @param {Buffer} message - 消息内容
+ * @param {Uint8Array} message - 消息内容(mqtt.js 5.16+ 传 plain Uint8Array,无 Buffer.toString)
  * @returns {Object} 解析后的消息对象
  * @throws {Error} 当消息解析失败时抛出错误
  */
 export function parseMessage(message) {
   try {
-    // 判断消息体是否压缩
+    // 判断消息体是否压缩(gzip magic: 1F 8B)
     const isCompressed = message.length >= 2 && message[0] === 0x1F && message[1] === 0x8B
 
-    // 解析消息体
-    const messageString = isCompressed
-      ? pako.ungzip(message, { to: 'string' })
-      : message.toString()
+    // pako 3 移除了 to:'string' 选项,统一返回 Uint8Array,需手动解码
+    const bytes = isCompressed ? ungzip(message) : message
+    const messageString = new TextDecoder().decode(bytes)
 
     return JSON.parse(messageString)
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(`消息解析失败: ${error.message}`)
   }
 }

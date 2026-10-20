@@ -25,10 +25,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, onUnmounted, ref, unref, watch, toRaw } from 'vue';
 import { Select } from 'ant-design-vue';
 import { Camera, Rectangle } from 'cesium';
+import type { FeatureCollection } from 'geojson';
 
 import CesiumPopup from '@/components/Popup/index.vue';
 import Info from './CesiumInfo.vue';
@@ -47,36 +48,49 @@ import ClippingElevationDialog from '@/components/Popup/src/ClippingElevationDia
 const { getGroupCompanyLevelMine, getContextmenuItems } = useGroupCompanyLevelMine();
 const { setPageLoading } = useSetting();
 
+/** 右键菜单控制器:可直接调用,附带 remove 清理 */
+interface MenuController {
+  (): void
+  remove?: () => void
+}
+
+/** 搜索下拉选项 */
+interface NameOption {
+  value: string
+  label: string
+}
+
 // 响应式数据
-const nameOptions = ref([]);
-const contentmenu = ref({});
-const geojsonPoints = ref();
+const nameOptions = ref<NameOption[]>([]);
+const contentmenu = ref<Record<string, any>>({});
+const geojsonPoints = ref<FeatureCollection>();
 const showModal = ref(false);
 const showOpModal = ref(false);
-const cesiumContainer = ref(null);
+const cesiumContainer = ref<HTMLElement | null>(null);
 const searchValue = ref('');
 const totalHtml = ref('');
 const selDisabled = ref(true);
-const mine = ref({});
-const modalContent = ref({});
+const mine = ref<Record<string, any>>({});
+const modalContent = ref<Record<string, any>>({});
 const cesiumPopup = ref({
   show: false,
-  position: null,
+  position: null as any,
+  sourceTarget: null as any,
   title: '',
   content: '',
-  offset: [0, 30],
+  offset: [0, 30] as number[],
 });
 // 保存每个矿山的勾选状态
-const mineCheckedKeys = ref({});
+const mineCheckedKeys = ref<Record<string, (string | number)[]>>({});
 
 // 非响应式变量
-let editMenu = null;
-let searchTimer = null;
+let editMenu: MenuController | null = null;
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-function handleChange(value) {
+function handleChange(value: any) {
   const viewer = getViewer();
   const entities = viewer?.dataSources?.get(0)?.entities?.values || [];
-  const target = entities.find(e => e?.properties?.getValue()?.name === value);
+  const target = entities.find((e: any) => e?.properties?.getValue()?.name === value);
   if (!target) {
     searchValue.value = '';
     return;
@@ -91,9 +105,9 @@ function handleChange(value) {
   searchValue.value = '';
 }
 
-function selectSearch(value) {
+function selectSearch(value: string) {
   // 简单防抖以减少频繁检索
-  clearTimeout(searchTimer);
+  clearTimeout(searchTimer ?? undefined);
   searchTimer = setTimeout(() => {
     const str = String(value || '').trim();
     if (!str) {
@@ -102,14 +116,14 @@ function selectSearch(value) {
     }
     const viewer = getViewer();
     const values = viewer?.dataSources?.get(0)?.entities?.values || [];
-    const arr = values.filter((layer) => {
+    const arr = values.filter((layer: any) => {
       const properties = layer?.properties?.getValue?.() || {};
       if (isAlphabetic(str)) {
         return String(properties.MineDesc || '').toUpperCase().includes(str.toUpperCase());
       }
       return String(properties.name || '').includes(str);
     });
-    nameOptions.value = arr.map((e) => {
+    nameOptions.value = arr.map((e: any) => {
       const properties = e.properties.getValue();
       return {
         value: properties.name,
@@ -126,23 +140,24 @@ function clearPopup() {
 }
 
 onMounted(() => {
-  const viewer = initializeCesium(cesiumContainer.value, editMenu);
+  if (!cesiumContainer.value) return;
+  const viewer = initializeCesium(cesiumContainer.value);
   const _viewer = toRaw(unref(viewer));
   _viewer.camera.moveEnd.addEventListener(() => {
     editMenu?.remove?.();
   });
 });
 
-function afterClose(e) {
+function afterClose(e: boolean) {
   showModal.value = e;
 }
 
-function afterOpClose(e) {
+function afterOpClose(e: boolean) {
   showOpModal.value = e;
 }
 
 // 处理勾选状态变化
-function handleCheckedKeysChange(keys) {
+function handleCheckedKeysChange(keys: (string | number)[]) {
   if (mine.value?.name) {
     mineCheckedKeys.value[mine.value.name] = keys;
   }
@@ -150,6 +165,7 @@ function handleCheckedKeysChange(keys) {
 
 /*** 监听右键菜单项变化 */
 watch(() => unref(getContextmenuItems), (newVal) => {
+  if (!newVal) return;
   const viewer = getViewer();
   const { menuItems, type } = newVal;
   contentmenu.value.menuItems = menuItems;
@@ -161,22 +177,24 @@ watch(() => unref(getContextmenuItems), (newVal) => {
 });
 
 watch(() => unref(getGroupCompanyLevelMine), (newVal) => {
+  if (!newVal) return;
   console.log('getGroupCompanyLevelMine: ', newVal);
-  const { data, contextmenuItems, total, columns: _columns } = newVal;
-  totalHtml.value = total;
-  geojsonPoints.value = turfFeatureCollection(data);
-  const bbox = turfBbox(geojsonPoints.value);
+  const { data, total } = newVal;
+  totalHtml.value = total ?? '';
+  const fc = turfFeatureCollection(data);
+  geojsonPoints.value = fc;
+  const bbox = turfBbox(fc);
   const destination = Rectangle.fromDegrees(bbox[0] - 6, bbox[1] - 6, bbox[2] + 6, bbox[3] + 6);
   Camera.DEFAULT_VIEW_RECTANGLE = destination;
   console.log('destination: ', destination);
   flyTo(destination, () => {
-    geoJSONPointLoad(geojsonPoints.value, 'MinePoint', { isSetupClustering: true });
+    geoJSONPointLoad(fc, 'MinePoint', { isSetupClustering: true });
     selDisabled.value = false;
     setPageLoading(false);
   });
 });
 
-function buildCesiumPopup(e) {
+function buildCesiumPopup(e: Record<string, any>) {
   const { position, sourceTarget, content, title } = e;
   cesiumPopup.value.position = position;
   cesiumPopup.value.sourceTarget = sourceTarget;

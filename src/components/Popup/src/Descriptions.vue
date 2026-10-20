@@ -1,13 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { Descriptions } from 'ant-design-vue'
 
 defineProps({
   columns: {
-    type: Array,
+    type: Array as any,
     default: () => []
   },
-  data: Object
+  data: { type: Object as any, default: () => ({}) }
 })
 </script>
 
